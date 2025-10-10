@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>GLB Models Scene</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        cursor: default;
+      }
+      
+      canvas {
+        cursor: crosshair;
+      }
+      
+      /* Crosshair สำหรับ FPS mode */
+      .crosshair {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        width: 20px;
+        height: 20px;
+        margin: -10px 0 0 -10px;
+        pointer-events: none;
+        z-index: 1000;
+        display: none;
+      }
+      
+      .crosshair::before,
+      .crosshair::after {
+        content: '';
+        position: absolute;
+        background: rgba(255, 255, 255, 0.8);
+        box-shadow: 0 0 2px rgba(0,0,0,0.5);
+      }
+      
+      .crosshair::before {
+        width: 2px;
+        height: 20px;
+        left: 9px;
+        top: 0;
+      }
+      
+      .crosshair::after {
+        width: 20px;
+        height: 2px;
+        left: 0;
+        top: 9px;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dat.gui@0.7.9/build/dat.gui.min.js"></script>
+
+    <script>
+      const renderer = new THREE.WebGLRenderer({
+        alpha: true, // รองรับพื้นหลังโปร่งใส
+        antialias: true,
+      });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+      // ตั้งค่าให้เหมาะกับพื้นหลังอวกาศ
+      renderer.outputEncoding = THREE.sRGBEncoding;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 0.5; // ลดค่า exposure เพื่อให้ดูเข้มขึ้น
+
+      renderer.setClearColor(0x000011, 0); // สีเข้มเล็กน้อยแทนดำสนิท
+      document.body.appendChild(renderer.domElement);
+
+      const scene = new THREE.Scene();
+      // ไม่ตั้งค่า scene.background เพื่อให้ skybox model แสดงผล
+
+      // Camera
+      const camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+      // ระบบตรวจจับการคลิกป้าย จะถูกประกาศด้านล่าง
+
+// จุดกล้องที่ต้องการให้ขยับไปเมื่อคลิกแต่ละป้าย (ตั้งเองได้)
+const cameraPoints = {
+    pbrmodelname:  { pos: new THREE.Vector3(3, 2, 6), rotY: -Math.PI / 3 },
+    sign_bunny: { pos: new THREE.Vector3(-2, 1.5, -3), rotY: Math.PI / 2 },
+    sign_base:  { pos: new THREE.Vector3(0, 2, 8), rotY: 0 }
+};
+
+      camera.position.set(28, 1.5, 1.5);
+      
+      // เก็บตำแหน่งเริ่มต้นของกล้อง
+      const initialCameraPosition = new THREE.Vector3(28, 1.5, 1.5);
+      const initialCameraPitch = Math.PI / 6; // เอียงขึ้น 30 องศา
+      const initialCameraYaw = 0;
+      
+      // ตั้งค่ามุมกล้องเริ่มต้น
+      camera.rotation.order = 'YXZ';
+      camera.rotation.x = initialCameraPitch;
+      camera.rotation.y = initialCameraYaw;
+      
+      // FPS Controls - ใช้ ESC เพื่อเปิด/ปิด FPS mode
+      let pitch = Math.PI / 6, yaw = 0; // เริ่มต้นด้วยมุมเอียง
+      const mouseSensitivity = 0.002;
+      let isPointerLocked = false;
+      let isFPSMode = false; // สถานะ FPS mode แยกจาก pointer lock
+      
+      // Pointer Lock API สำหรับ FPS control
+      const canvas = renderer.domElement;
+      
+      // ฟังก์ชันเข้า FPS mode
+      function enterFPSMode() {
+        if (!isFPSMode) {
+          canvas.requestPointerLock();
+          isFPSMode = true;
+        }
+      }
+      
+      // ฟังก์ชันออกจาก FPS mode
+      function exitFPSMode() {
+        if (isFPSMode) {
+          if (document.pointerLockElement) {
+            document.exitPointerLock();
+          }
+          isFPSMode = false;
+          isPointerLocked = false;
+        }
+      }
+      
+      // ตรวจสอบสถานะ Pointer Lock
+      document.addEventListener('pointerlockchange', () => {
+        isPointerLocked = document.pointerLockElement === canvas;
+        
+        // อัปเดต UI ตามสถานะ FPS mode
+        if (isFPSMode && isPointerLocked) {
+          instructions.style.display = 'none';
+          crosshair.style.display = 'block';
+        } else {
+          instructions.style.display = 'block';
+          crosshair.style.display = 'none';
+          if (!isPointerLocked) {
+            isFPSMode = false; // Reset FPS mode เมื่อ pointer lock หลุด
+          }
+        }
+      });
+      
+      // Mouse movement ใน FPS mode
+      document.addEventListener('mousemove', (event) => {
+        if (isFPSMode && isPointerLocked) {
+          yaw -= event.movementX * mouseSensitivity;
+          pitch -= event.movementY * mouseSensitivity;
+          
+          // จำกัดการมองขึ้น-ลง (จำกัดให้แคบลง)
+          const minPitch = -Math.PI/6; // มองลงได้แค่ 30 องศา
+          const maxPitch = Math.PI/3;  // มองขึ้นได้แค่ 60 องศา
+          pitch = Math.max(minPitch, Math.min(maxPitch, pitch));
+          
+          // อัปเดตการหมุนของกล้อง
+          camera.rotation.order = 'YXZ';
+          camera.rotation.y = yaw;
+          camera.rotation.x = pitch;
+        }
+      });
+      
+      // แสดงคำแนะนำ
+      const instructions = document.createElement('div');
+      instructions.style.position = 'absolute';
+      instructions.style.top = '10px';
+      instructions.style.left = '10px';
+      instructions.style.color = 'white';
+      instructions.style.backgroundColor = 'rgba(0,0,0,0.8)';
+      instructions.style.padding = '15px';
+      instructions.style.borderRadius = '8px';
+      instructions.style.fontFamily = 'Arial, sans-serif';
+      instructions.style.fontSize = '14px';
+      instructions.style.zIndex = '1000';
+      instructions.innerHTML = `
+        <strong>🎮 Controls:</strong><br>
+        <span style="color: #ffff00;">Q</span>: Enter/Exit FPS mode<br>
+        <br><strong>🎯 In FPS Mode:</strong><br>
+        <span style="color: #00ff00;">WASD</span>: Move around<br>
+        <span style="color: #00ff00;">Space</span>: Fly up<br>
+        <span style="color: #00ff00;">Shift</span>: Fly down<br>
+        <span style="color: #00ff00;">Mouse</span>: Look around<br>
+        <span style="color: #ff6600;">Click (aim at center)</span>: Interact<br>
+        <span style="color: #ff9900;">Click Back Model</span>: Return home<br>
+        <span style="color: #00ffff;">Click Teleport Models</span>: Go to special locations<br>
+        <span style="color: #ffff00;">Q</span>: Exit FPS mode
+      `;
+      document.body.appendChild(instructions);
+      
+      // เพิ่ม crosshair
+      const crosshair = document.createElement('div');
+      crosshair.className = 'crosshair';
+      document.body.appendChild(crosshair);
+
+      // Mouse look (มองรอบตัว)
+      document.body.requestPointerLock =
+        document.body.requestPointerLock || document.body.mozRequestPointerLock;
+      document.body.onclick = () => document.body.requestPointerLock();
+      document.addEventListener("mousemove", (e) => {
+        if (document.pointerLockElement === document.body) {
+          camera.rotation.y -= e.movementX * 0.002;
+          camera.rotation.x -= e.movementY * 0.002;
+          camera.rotation.x = Math.max(
+            -Math.PI / 2,
+            Math.min(Math.PI / 2, camera.rotation.x)
+          );
+        }
+      });
+
+      // 🔹 GUI แสดงตำแหน่งกล้อง
+      const info = document.createElement("div");
+      info.style.position = "fixed";
+      info.style.top = "10px";
+      info.style.left = "10px";
+      info.style.color = "white";
+      info.style.background = "rgba(0,0,0,0.5)";
+      info.style.padding = "5px 10px";
+      info.style.borderRadius = "8px";
+      info.style.fontFamily = "monospace";
+      info.style.zIndex = "10";
+      document.body.appendChild(info);
+
+      // Light - ลดความเข้มแสงเพื่อให้พื้นหลังอวกาศดูเข้มขึ้น
+      scene.add(new THREE.AmbientLight(0x404040, 0.3)); // ลดจาก 2.0 เป็น 0.3 และเปลี่ยนเป็นสีเทา
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.8); // ลดจาก 2.0 เป็น 0.8
+      dirLight.position.set(10, 5, 10);
+      dirLight.castShadow = true;
+      scene.add(dirLight);
+
+      // Add ground plane with texture
+      const groundTexture = new THREE.TextureLoader().load(
+        "https://film2147.github.io/modelwork3/asphalt-road-texture-dark-gray-color_1017-20231.jpg"
+      );
+      groundTexture.wrapS = THREE.RepeatWrapping;
+      groundTexture.wrapT = THREE.RepeatWrapping;
+      groundTexture.repeat.set(1, 1);
+
+      // Create ground plane
+      const groundGeo = new THREE.PlaneGeometry(30, 30);
+      const groundMat = new THREE.MeshStandardMaterial({
+        map: groundTexture,
+        roughness: 0.8,
+        metalness: 0.2,
+      });
+
+      const ground = new THREE.Mesh(groundGeo, groundMat);
+      ground.rotation.x = -Math.PI / 2;
+      ground.position.y = 0;
+      ground.receiveShadow = true;
+      scene.add(ground);
+
+      // GUI Controls
+      const gui = new dat.GUI();
+      const lightFolder = gui.addFolder("Light");
+
+      // เพิ่มการควบคุม ambient light
+      const ambientLight = scene.children.find(
+        (child) => child.type === "AmbientLight"
+      );
+      lightFolder
+        .add(ambientLight, "intensity", 0, 1, 0.1)
+        .name("Ambient Intensity");
+
+      lightFolder
+        .add(dirLight, "intensity", 0, 2, 0.1)
+        .name("Directional Intensity");
+      lightFolder.add(dirLight.position, "x", -20, 20).name("DirLight X");
+      lightFolder.add(dirLight.position, "y", -20, 20).name("DirLight Y");
+      lightFolder.add(dirLight.position, "z", -20, 20).name("DirLight Z");
+      lightFolder.open();
+
+      // --- Load GLB Models ---
+
+      // Setup DRACO decoder for compressed GLB files
+      const draco = new THREE.DRACOLoader();
+      draco.setDecoderPath(
+        "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/draco/"
+      );
+
+      // Setup GLTF/GLB loader
+      const gltfLoader = new THREE.GLTFLoader();
+      gltfLoader.setDRACOLoader(draco);
+
+      // Load GLB Model 1 - Center (บนพื้นดิน)
+      gltfLoader.load(
+        "https://film2147.github.io/finalwok/shiphallway.glb",
+        (gltf) => {
+          const model1 = gltf.scene;
+
+          model1.traverse((child) => {
+            if (child.isMesh) {
+              // ตรวจสอบและลบพื้นหลังที่อาจติดมาในโมเดล
+              if (child.material && child.material.name) {
+                const matName = child.material.name.toLowerCase();
+                if (
+                  matName.includes("background") ||
+                  matName.includes("sky") ||
+                  matName.includes("environment") ||
+                  matName.includes("skybox")
+                ) {
+                  child.visible = false; // ซ่อนพื้นหลังที่ไม่ต้องการ
+                  console.log("Hidden background mesh in model1:", child.name);
+                  return;
+                }
+              }
+
+              child.castShadow = true;
+              child.receiveShadow = true;
+              if (child.material && child.material.map) {
+                child.material.map.encoding = THREE.sRGBEncoding;
+                child.material.needsUpdate = true;
+              }
+            }
+          });
+
+          model1.position.set(0.5, 0.5, 0.5);
+          model1.scale.set(1.5, 1.5, 1.5);
+          scene.add(model1);
+          clickableObjects.push(model1);
+
+          console.log("GLB Model 1 loaded successfully");
+          console.log("Clickable objects count:", clickableObjects.length);
+        },
+        (progress) => {
+          const percent = progress.total
+            ? (progress.loaded / progress.total) * 100
+            : 0;
+          console.log(`Model 1 Loading: ${percent.toFixed(1)}%`);
+        },
+        (error) => {
+          console.error("Error loading GLB Model 1:", error);
+        }
+      );
+
+      // Load GLB Model 2 - Left
+      gltfLoader.load(
+        "https://film2147.github.io/finalwok/spacesuit.glb",
+        (gltf) => {
+          const model2 = gltf.scene;
+
+          model2.traverse((child) => {
+            if (child.isMesh) {
+              // ตรวจสอบและลบพื้นหลังที่อาจติดมา
+              if (child.material && child.material.name) {
+                const matName = child.material.name.toLowerCase();
+                if (
+                  matName.includes("background") ||
+                  matName.includes("sky") ||
+                  matName.includes("environment") ||
+                  matName.includes("skybox")
+                ) {
+                  child.visible = false;
+                  console.log("Hidden background mesh in model2:", child.name);
+                  return;
+                }
+              }
+
+              child.castShadow = true;
+              child.receiveShadow = true;
+            }
+          });
+
+          model2.position.set(-17.07, 4.04, -46.33); // อยู่ทางซ้าย ลอยกลางอากาศ
+          model2.scale.set(2.5, 2.5, 2.5);
+          model2.rotation.y = Math.PI / 5; // หมุนเข้าหาศูนย์กลางเล็กน้อย
+          scene.add(model2);
+          clickableObjects.push(model2);
+        }
+      );
+
+      // Load GLB Model 3 - Right
+      gltfLoader.load(
+        "https://film2147.github.io/finalwok/atlantis.glb",
+        (gltf) => {
+          const model3 = gltf.scene;
+
+          model3.traverse((child) => {
+            if (child.isMesh) {
+              // ตรวจสอบและลบพื้นหลังที่อาจติดมา
+              if (child.material && child.material.name) {
+                const matName = child.material.name.toLowerCase();
+                if (
+                  matName.includes("background") ||
+                  matName.includes("sky") ||
+                  matName.includes("environment") ||
+                  matName.includes("skybox")
+                ) {
+                  child.visible = false;
+                  console.log("Hidden background mesh in model3:", child.name);
+                  return;
+                }
+              }
+
+              child.castShadow = true;
+              child.receiveShadow = true;
+            }
+          });
+
+          model3.position.set(1.5, 1.5, 1.5); // อยู่ทางขวา ลอยกลางอากาศ
+          model3.scale.set(10, 10, 10);
+          model3.rotation.y = -Math.PI / 5; // หมุนเข้าหาศูนย์กลางเล็กน้อย
+          scene.add(model3);
+          clickableObjects.push(model3);
+        }
+      );
+
+      // Load GLB Model 4 - Back (บนพื้นดิน)
+      gltfLoader.load(
+        "https://film2147.github.io/finalwok/space_bunny.glb",
+        (gltf) => {
+          const model4 = gltf.scene;
+
+          model4.traverse((child) => {
+            if (child.isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+              if (child.material && child.material.map) {
+                child.material.map.encoding = THREE.sRGBEncoding;
+                child.material.needsUpdate = true;
+              }
+            }
+          });
+
+          model4.position.set(-1, 0.2, -4);
+          model4.scale.set(1.5, 1.5, 1.5);
+          model4.rotation.y = Math.PI; // หมุน 180 องศา
+          scene.add(model4);
+          clickableObjects.push(model4);
+
+          console.log("GLB Model 4 loaded successfully");
+        },
+        (progress) => {
+          const percent = progress.total
+            ? (progress.loaded / progress.total) * 100
+            : 0;
+          console.log(`Model 4 Loading: ${percent.toFixed(1)}%`);
+        },
+        (error) => {
+          console.error("Error loading GLB Model 4:", error);
+        }
+      );
+      // Load GLB Model 5 - Skybox Background
+      gltfLoader.load(
+        "https://film2147.github.io/finalwok/galaxy.glb",
+        (gltf) => {
+          const model5 = gltf.scene;
+
+          model5.traverse((child) => {
+            if (child.isMesh) {
+              console.log(
+                "Skybox mesh name:",
+                child.name,
+                "material:",
+                child.material?.name
+              );
+
+              // Skybox ไม่ควรมี shadow
+              child.castShadow = false;
+              child.receiveShadow = false;
+
+              if (child.material) {
+                // แสดงทุก mesh ใน skybox model
+                child.material.side = THREE.BackSide; // ให้มองเห็นจากด้านใน
+                child.material.fog = false; // ไม่ให้ถูกกระทบโดย fog
+
+                if (child.material.map) {
+                  child.material.map.encoding = THREE.sRGBEncoding;
+                  child.material.needsUpdate = true;
+                }
+
+                console.log("Skybox mesh visible:", child.name);
+              }
+            }
+          });
+
+          // ตำแหน่งกึ่งกลาง ขนาดใหญ่ครอบคลุมทั้งฉาก
+          model5.position.set(0, 0, 0);
+          model5.scale.set(500, 500, 500); // ขนาดใหญ่มากเพื่อครอบคลุมทั้งฉาก
+          scene.add(model5);
+          clickableObjects.push(model5);
+
+          console.log("Skybox Model 5 loaded successfully");
+        },
+        (progress) => {
+          const percent = progress.total
+            ? (progress.loaded / progress.total) * 100
+            : 0;
+          console.log(`Skybox Model 5 Loading: ${percent.toFixed(1)}%`);
+        },
+        (error) => {
+          console.error("Error loading Skybox Model 5:", error);
+          console.log("Trying alternative skybox method...");
+
+          // ถ้าโหลด GLB ไม่สำเร็จ ให้ใช้ simple skybox แทน
+          const skyGeometry = new THREE.SphereGeometry(400, 60, 40);
+          const skyMaterial = new THREE.MeshBasicMaterial({
+            color: 0x000033, // สีฟ้าเข้มคล้ายอวกาศ
+            side: THREE.BackSide,
+            fog: false,
+          });
+          const skybox = new THREE.Mesh(skyGeometry, skyMaterial);
+          scene.add(skybox);
+          console.log("Fallback skybox created");
+        }
+      );
+
+      // Load GLB Model 6 - Additional Model
+      gltfLoader.load(
+        "https://film2147.github.io/finalwok/name.glb",
+        (gltf) => {
+          const model6 = gltf.scene;
+
+          model6.traverse((child) => {
+            if (child.isMesh) {
+              // ตรวจสอบและลบพื้นหลังที่อาจติดมา
+              if (child.material && child.material.name) {
+                const matName = child.material.name.toLowerCase();
+                if (
+                  matName.includes("background") ||
+                  matName.includes("sky") ||
+                  matName.includes("environment") ||
+                  matName.includes("skybox")
+                ) {
+                  child.visible = false;
+                  console.log("Hidden background mesh in model6:", child.name);
+                  return;
+                }
+              }
+
+              child.castShadow = true;
+              child.receiveShadow = true;
+              if (child.material && child.material.map) {
+                child.material.map.encoding = THREE.sRGBEncoding;
+                child.material.needsUpdate = true;
+              }
+            }
+          });
+
+          // ตำแหน่งด้านบน ลอยกลางอากาศ
+          model6.position.set(29.9, 61.4, 13.8);
+          model6.scale.set(2, 2, 2);
+          model6.rotation.y = Math.PI / 6; // หมุนเล็กน้อย
+          model6.name = 'NameModel6'; // เพิ่มชื่อเพื่อให้หาได้ง่าย
+          model6.userData = { originalRotationY: Math.PI / 6 }; // เก็บมุมเดิม
+          scene.add(model6);
+          clickableObjects.push(model6);
+
+          console.log("GLB Model 6 loaded successfully");
+        },
+        (progress) => {
+          const percent = progress.total
+            ? (progress.loaded / progress.total) * 100
+            : 0;
+          console.log(`Model 6 Loading: ${percent.toFixed(1)}%`);
+        },
+        (error) => {
+          console.error("Error loading GLB Model 6:", error);
+        }
+      );
+
+      // Load GLB Model 7 - Additional Model
+      gltfLoader.load(
+        "https://film2147.github.io/finalwok/pbrmodel.glb",
+        (gltf) => {
+          const model7 = gltf.scene;
+
+          model7.traverse((child) => {
+            if (child.isMesh) {
+              // ตั้งชื่อให้ชัดเจนสำหรับ click detection
+              if (child.name === "sign1") child.name = "pbrmodelname";
+              if (child.name === "sign2") child.name = "pbabouteme";
+              if (child.name === "sign3") child.name = "sign_base";
+
+              // ตรวจสอบและลบพื้นหลังที่อาจติดมา
+              if (child.material && child.material.name) {
+                const matName = child.material.name.toLowerCase();
+                if (
+                  matName.includes("background") ||
+                  matName.includes("sky") ||
+                  matName.includes("environment") ||
+                  matName.includes("skybox")
+                ) {
+                  child.visible = false;
+                  console.log("Hidden background mesh in model7:", child.name);
+                  return;
+                }
+              }
+
+              child.castShadow = true;
+              child.receiveShadow = true;
+              if (child.material && child.material.map) {
+                child.material.map.encoding = THREE.sRGBEncoding;
+                child.material.needsUpdate = true;
+              }
+              
+              console.log("🔍 Model7 Mesh:", child.name);
+            }
+          });
+
+          // ตำแหน่งด้านขวาหลัง ลอยกลางอากาศ
+          model7.position.set(27, 0.7, -8.2);
+          model7.scale.set(2, 2, 2);
+          
+          // ตั้งค่า userData สำหรับโมเดล 7 - ไปยังตำแหน่งเฉพาะ
+          model7.userData = { 
+            isTeleportModel: true, 
+            targetPosition: { x: 1.2, y: 3.1, z: -14.9 },
+            targetPitch: 0 * (Math.PI / 180),   // 0 องศา (ระดับตรง)
+            targetYaw: 169 * (Math.PI / 180),   // 169 องศา (หันขวาเกือบหลังหัน)
+            modelName: 'teleport_model_7' 
+          };
+          model7.name = 'TeleportModel7';
+          
+          scene.add(model7);
+          clickableObjects.push(model7);
+
+          console.log("GLB Model 7 loaded successfully");
+        },
+        (progress) => {
+          const percent = progress.total
+            ? (progress.loaded / progress.total) * 100
+            : 0;
+          console.log(`Model 7 Loading: ${percent.toFixed(1)}%`);
+        },
+        (error) => {
+          console.error("Error loading GLB Model 7:", error);
+        }
+      );
+
+      // Load GLB Model 8 - Additional Model
+      gltfLoader.load(
+        "https://film2147.github.io/finalwok/back.glb", // เปลี่ยน URL ตามต้องการ
+        (gltf) => {
+          const backModelTemp = gltf.scene;
+
+          backModelTemp.traverse((child) => {
+            if (child.isMesh) {
+              // ตั้งชื่อให้ชัดเจนสำหรับ click detection
+              console.log("🔍 Model8 Mesh:", child.name);
+
+              // ตรวจสอบและลบพื้นหลังที่อาจติดมา
+              if (child.material && child.material.name) {
+                const matName = child.material.name.toLowerCase();
+                if (
+                  matName.includes("background") ||
+                  matName.includes("sky") ||
+                  matName.includes("environment") ||
+                  matName.includes("skybox")
+                ) {
+                  child.visible = false;
+                  console.log("Hidden background mesh in model8:", child.name);
+                  return;
+                }
+              }
+
+              child.castShadow = true;
+              child.receiveShadow = true;
+              if (child.material && child.material.map) {
+                child.material.map.encoding = THREE.sRGBEncoding;
+                child.material.needsUpdate = true;
+              }
+            }
+          });
+
+          // ตำแหน่งและขนาด - ปรับตามต้องการ
+          backModelTemp.position.set(22.3, 58.2, 18.4); // ขยับไปทางซ้าย (ลด x จาก 29.9 เป็น 20)
+          // ขยับไปทางซ้าย (ลด x จาก 29.9 เป็น 20)
+          backModelTemp.scale.set(3, 3, 3);
+          backModelTemp.rotation.y = Math.PI / 6; // หมุนเล็กน้อย
+          
+          // ตั้งชื่อให้โมเดล 8 เพื่อระบุได้ง่าย
+          backModelTemp.userData = { isBackButton: true, modelName: 'back_model' };
+          backModelTemp.name = 'BackButtonModel'; // เพิ่มชื่อ
+          
+          // เก็บ reference สำหรับ animation
+          model8 = backModelTemp;
+          
+          scene.add(backModelTemp);  
+          clickableObjects.push(backModelTemp);
+
+          console.log("GLB Model 8 (Back Button) loaded successfully");
+          console.log("Model 8 userData:", model8.userData);
+          console.log("Total clickable objects:", clickableObjects.length);
+          console.log("Model 8 index in clickableObjects:", clickableObjects.indexOf(model8));
+        },
+        (progress) => {
+          const percent = progress.total
+            ? (progress.loaded / progress.total) * 100
+            : 0;
+          console.log(`Model 8 Loading: ${percent.toFixed(1)}%`);
+        },
+        (error) => {
+          console.error("Error loading GLB Model 8:", error);
+        }
+      );
+
+      // Load GLB Model 9 - Additional Model
+      gltfLoader.load(
+        "https://film2147.github.io/finalwok/aboutme.glb", // เปลี่ยน URL ตามต้องการ
+        (gltf) => {
+          const model9 = gltf.scene;
+
+          model9.traverse((child) => {
+            if (child.isMesh) {
+              // ตั้งชื่อให้ชัดเจนสำหรับ click detection
+              console.log("🔍 Model9 Mesh:", child.name);
+
+              // ตรวจสอบและลบพื้นหลังที่อาจติดมา
+              if (child.material && child.material.name) {
+                const matName = child.material.name.toLowerCase();
+                if (
+                  matName.includes("background") ||
+                  matName.includes("sky") ||
+                  matName.includes("environment") ||
+                  matName.includes("skybox")
+                ) {
+                  child.visible = false;
+                  console.log("Hidden background mesh in model9:", child.name);
+                  return;
+                }
+              }
+
+              child.castShadow = true;
+              child.receiveShadow = true;
+              if (child.material && child.material.map) {
+                child.material.map.encoding = THREE.sRGBEncoding;
+                child.material.needsUpdate = true;
+              }
+            }
+          });
+
+          // ตำแหน่งและขนาด - ปรับตามต้องการ
+          model9.position.set(27, -0.7, -8.2); // ตำแหน่งใหม่
+          model9.scale.set(2, 2, 2);
+          
+          // ตั้งค่า userData สำหรับโมเดล 9 - ไปยังตำแหน่งเฉพาะ
+          model9.userData = { 
+            isTeleportModel: true, 
+            targetPosition: { x: 38.1, y: 61.8, z: 42 },
+            targetPitch: 3 * (Math.PI / 180), // 3 องศา (แปลงเป็น radians)
+            targetYaw: 40 * (Math.PI / 180),   // 40 องศา (แปลงเป็น radians)
+            modelName: 'teleport_model_9' 
+          };
+          model9.name = 'TeleportModel9';
+          
+          scene.add(model9);  
+          clickableObjects.push(model9);
+
+          console.log("GLB Model 9 loaded successfully");
+          console.log("Total clickable objects:", clickableObjects.length);
+        },
+        (progress) => {
+          const percent = progress.total
+            ? (progress.loaded / progress.total) * 100
+            : 0;
+          console.log(`Model 9 Loading: ${percent.toFixed(1)}%`);
+        },
+        (error) => {
+          console.error("Error loading GLB Model 9:", error);
+        }
+      );
+
+      // Load GLB Model 10 - Additional Model
+      gltfLoader.load(
+        "https://film2147.github.io/finalwok/pic.glb", // เปลี่ยน URL ตามต้องการ
+        (gltf) => {
+          const model10 = gltf.scene;
+
+          model10.traverse((child) => {
+            if (child.isMesh) {
+              // ตั้งชื่อให้ชัดเจนสำหรับ click detection
+              console.log("🔍 Model10 Mesh:", child.name);
+
+              // ตรวจสอบและลบพื้นหลังที่อาจติดมา
+              if (child.material && child.material.name) {
+                const matName = child.material.name.toLowerCase();
+                if (
+                  matName.includes("background") ||
+                  matName.includes("sky") ||
+                  matName.includes("environment") ||
+                  matName.includes("skybox")
+                ) {
+                  child.visible = false;
+                  console.log("Hidden background mesh in model10:", child.name);
+                  return;
+                }
+              }
+
+              child.castShadow = true;
+              child.receiveShadow = true;
+              if (child.material && child.material.map) {
+                child.material.map.encoding = THREE.sRGBEncoding;
+                child.material.needsUpdate = true;
+              }
+            }
+          });
+
+          // ตำแหน่งและขนาด - ปรับตามต้องการ
+          model10.position.set(8.9, 61.8, 22.1); // ตำแหน่งใหม่ เลื่อนไปทางซ้าย
+          model10.scale.set(10, 10, 10);
+          model10.rotation.y = Math.PI / 6 + Math.PI / 2 + Math.PI / 6 + Math.PI / 2 + Math.PI / 6 + Math.PI / 5; // หมุนเล็กน้อย
+          
+          // ตั้งค่า userData สำหรับโมเดล 10 - ไปยังตำแหน่งเฉพาะ
+          model10.userData = { 
+            isTeleportModel: true, 
+            targetPosition: { x: 15.5, y: 2.5, z: 20.8 },
+            targetPitch: -10 * (Math.PI / 180), // -10 องศา (มองลงเล็กน้อย)
+            targetYaw: 90 * (Math.PI / 180),     // 90 องศา (หันไปทางขวา)
+            modelName: 'teleport_model_10' 
+          };
+          model10.name = 'TeleportModel10';
+          
+          scene.add(model10);  
+          clickableObjects.push(model10);
+
+          console.log("GLB Model 10 loaded successfully");
+          console.log("Total clickable objects:", clickableObjects.length);
+        },
+        (progress) => {
+          const percent = progress.total
+            ? (progress.loaded / progress.total) * 100
+            : 0;
+          console.log(`Model 10 Loading: ${percent.toFixed(1)}%`);
+        },
+        (error) => {
+          console.error("Error loading GLB Model 10:", error);
+        }
+      );
+
+      // Load GLB Model 11 - Additional Model
+      gltfLoader.load(
+        "https://film2147.github.io/finalwok/back.glb", // เปลี่ยน URL ตามต้องการ
+        (gltf) => {
+          const model11Temp = gltf.scene;
+
+          model11Temp.traverse((child) => {
+            if (child.isMesh) {
+              // ตั้งชื่อให้ชัดเจนสำหรับ click detection
+              console.log("🔍 Model11 Mesh:", child.name);
+
+              // ตรวจสอบและลบพื้นหลังที่อาจติดมา
+              if (child.material && child.material.name) {
+                const matName = child.material.name.toLowerCase();
+                if (
+                  matName.includes("background") ||
+                  matName.includes("sky") ||
+                  matName.includes("environment") ||
+                  matName.includes("skybox")
+                ) {
+                  child.visible = false;
+                  console.log("Hidden background mesh in model11:", child.name);
+                  return;
+                }
+              }
+
+              child.castShadow = true;
+              child.receiveShadow = true;
+              if (child.material && child.material.map) {
+                child.material.map.encoding = THREE.sRGBEncoding;
+                child.material.needsUpdate = true;
+              }
+            }
+          });
+
+          // ตำแหน่งและขนาด - ปรับตามต้องการ
+          model11Temp.position.set(6.1, 0.4, -5.9); // ตำแหน่งใหม่ ระหว่าง model 7 และ model 10
+          model11Temp.scale.set(2, 2, 2);
+          model11Temp.rotation.y = Math.PI / 2 + Math.PI / 2; // หมุนเล็กน้อย
+          
+          // ตั้งค่า userData สำหรับโมเดล 11 - กลับไปจุดเริ่มต้น
+          model11Temp.userData = { 
+            isBackButton: true, 
+            modelName: 'back_model_11' 
+          };
+          model11Temp.name = 'BackButtonModel11';
+          
+          // เก็บ reference สำหรับ animation
+          model11 = model11Temp;
+          
+          scene.add(model11Temp);  
+          clickableObjects.push(model11Temp);
+
+          console.log("GLB Model 11 loaded successfully");
+          console.log("Total clickable objects:", clickableObjects.length);
+        },
+        (progress) => {
+          const percent = progress.total
+            ? (progress.loaded / progress.total) * 100
+            : 0;
+          console.log(`Model 11 Loading: ${percent.toFixed(1)}%`);
+        },
+        (error) => {
+          console.error("Error loading GLB Model 11:", error);
+        }
+      );
+
+
+    // 🔹 ตัวแปรสำหรับการเคลื่อนที่แบบ FPS (Global)
+      let moveForward = false,
+          moveBackward = false,
+          moveLeft = false,
+          moveRight = false,
+          moveUp = false,
+          moveDown = false;
+
+      const speed = 0.1;
+ 
+      // 🔹 เวกเตอร์ช่วยคำนวณทิศทาง
+      const forwardVec = new THREE.Vector3();
+      const rightVec = new THREE.Vector3();
+
+      // 🎯 ระบบคลิก 3D Objects
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2();
+      let clickableObjects = []; // เก็บ objects ที่คลิกได้
+      
+      // ตัวแปรสำหรับ camera animation
+      let isAnimating = false;
+      const animationDuration = 2000; // 2 วินาที
+      let animationStartTime = 0;
+      let startPosition = new THREE.Vector3();
+      let targetPosition = new THREE.Vector3();
+      let startRotation = { pitch: 0, yaw: 0 };
+      let targetRotation = { pitch: 0, yaw: 0 };
+
+      // 🎯 ฟังก์ชัน animate กล้องไปยังตำแหน่งเป้าหมาย
+      function animateCameraTo(targetPos, targetLookAt = null) {
+        if (isAnimating) return; // ป้องกันการ animate ซ้อน
+        
+        isAnimating = true;
+        animationStartTime = performance.now();
+        
+        // เก็บตำแหน่งเริ่มต้น
+        startPosition.copy(camera.position);
+        targetPosition.copy(targetPos);
+        
+        // เก็บการหมุนเริ่มต้น
+        startRotation.pitch = pitch;
+        startRotation.yaw = yaw;
+        
+        // คำนวณการหมุนเป้าหมาย
+        if (targetLookAt) {
+          const direction = new THREE.Vector3().subVectors(targetLookAt, targetPos).normalize();
+          targetRotation.yaw = Math.atan2(-direction.x, -direction.z);
+          targetRotation.pitch = Math.asin(direction.y);
+        } else {
+          // ถ้าไม่มี targetLookAt ให้ใช้การหมุนเริ่มต้น (สำหรับการกลับไปจุดเริ่มต้น)
+          targetRotation.pitch = initialCameraPitch;
+          targetRotation.yaw = initialCameraYaw;
+        }
+        
+        console.log(`🎯 Animating camera to: ${targetPos.x}, ${targetPos.y}, ${targetPos.z}`);
+      }
+
+      // 🎯 ฟังก์ชัน animate กล้องไปยังตำแหน่งเป้าหมายด้วยมุมที่กำหนด
+      function animateCameraToWithFixedAngle(targetPos, fixedPitch, fixedYaw) {
+        if (isAnimating) return; // ป้องกันการ animate ซ้อน
+        
+        isAnimating = true;
+        animationStartTime = performance.now();
+        
+        // เก็บตำแหน่งเริ่มต้น
+        startPosition.copy(camera.position);
+        targetPosition.copy(targetPos);
+        
+        // เก็บการหมุนเริ่มต้น
+        startRotation.pitch = pitch;
+        startRotation.yaw = yaw;
+        
+        // กำหนดมุมเป้าหมายแบบล็อก
+        targetRotation.pitch = fixedPitch;
+        targetRotation.yaw = fixedYaw;
+        
+        console.log(`🎯 Animating camera to: ${targetPos.x}, ${targetPos.y}, ${targetPos.z} with fixed angle: pitch=${fixedPitch.toFixed(2)}, yaw=${fixedYaw.toFixed(2)}`);
+      }
+
+      // 🎯 ฟังก์ชันจัดการการคลิก
+      function onMouseClick(event) {
+        if (!isFPSMode || !isPointerLocked) return; // ทำงานเฉพาะใน FPS mode
+        
+        // ใน FPS mode ใช้ raycaster จากตำแหน่งกึ่งกลางหน้าจอ (crosshair)
+        mouse.x = 0; // กึ่งกลางหน้าจอ
+        mouse.y = 0; // กึ่งกลางหน้าจอ
+        
+        // ตั้งค่า raycaster จากกึ่งกลางหน้าจอ
+        raycaster.setFromCamera(mouse, camera);
+        
+        // ตรวจสอบการชนกับ objects
+        const intersects = raycaster.intersectObjects(clickableObjects, true);
+        
+        console.log('🔍 Click detected. Clickable objects:', clickableObjects.length);
+        console.log('🔍 Intersections found:', intersects.length);
+        
+        if (intersects.length > 0) {
+          const clickedObject = intersects[0].object;
+          const clickedPosition = intersects[0].point;
+          
+          console.log('🎯 Clicked object:', clickedObject.name || 'unnamed');
+          
+          // ตรวจสอบว่าคลิกที่โมเดล 8 (back.glb) หรือไม่
+          // หาโมเดลหลักที่ถูกคลิก (traverse up ไปหา parent ที่เป็น scene model)
+          let parentModel = clickedObject;
+          while (parentModel.parent && parentModel.parent !== scene) {
+            parentModel = parentModel.parent;
+          }
+          
+          console.log('🔍 Parent model found:', parentModel);
+          console.log('🔍 Parent userData:', parentModel.userData);
+          
+          // ตรวจสอบว่าเป็นโมเดลประเภทไหน
+          let isBackModel = false;
+          let isTeleportModel = false;
+          let teleportTarget = null;
+          
+          // ตรวจสอบ Back Model (Model 8)
+          if (parentModel.userData && parentModel.userData.isBackButton === true) {
+            isBackModel = true;
+          } else if (clickedObject.userData && clickedObject.userData.isBackButton === true) {
+            isBackModel = true;
+          }
+          
+          // ตรวจสอบ Teleport Model (Model 7 และ Model 9)
+          if (parentModel.userData && parentModel.userData.isTeleportModel === true) {
+            isTeleportModel = true;
+            teleportTarget = parentModel.userData.targetPosition;
+          } else if (clickedObject.userData && clickedObject.userData.isTeleportModel === true) {
+            isTeleportModel = true;
+            teleportTarget = clickedObject.userData.targetPosition;
+          }
+          
+          console.log('🔍 Is back model?', isBackModel);
+          console.log('🔍 Is teleport model?', isTeleportModel);
+          console.log('🔍 Teleport target:', teleportTarget);
+          
+          if (isBackModel) {
+            console.log('🏠 ✅ Clicked Back Model (back.glb) - Returning to start position...');
+            returnToStartPosition();
+          } else if (isTeleportModel && teleportTarget) {
+            // ระบุว่าเป็นโมเดลไหน
+            const modelName = (parentModel.userData && parentModel.userData.modelName) || 
+                             (clickedObject.userData && clickedObject.userData.modelName) || 
+                             'unknown_teleport_model';
+            console.log(`🚀 ✅ Clicked Teleport Model (${modelName}) - Teleporting to special position...`);
+            const targetPos = new THREE.Vector3(teleportTarget.x, teleportTarget.y, teleportTarget.z);
+            
+            // ใช้มุมที่กำหนดใน userData หรือใช้ค่าเริ่มต้น
+            let targetPitch = 3 * (Math.PI / 180); // ค่าเริ่มต้น 3 องศา
+            let targetYaw = 40 * (Math.PI / 180);   // ค่าเริ่มต้น 40 องศา
+            
+            if (parentModel.userData && parentModel.userData.targetPitch !== undefined) {
+              targetPitch = parentModel.userData.targetPitch;
+              targetYaw = parentModel.userData.targetYaw || 0;
+            } else if (clickedObject.userData && clickedObject.userData.targetPitch !== undefined) {
+              targetPitch = clickedObject.userData.targetPitch;
+              targetYaw = clickedObject.userData.targetYaw || 0;
+            }
+            
+            console.log(`🎯 Using target angles: pitch=${targetPitch.toFixed(3)}, yaw=${targetYaw.toFixed(3)}`);
+            animateCameraToWithFixedAngle(targetPos, targetPitch, targetYaw);
+          } else {
+            // ตรวจสอบว่าคลิกที่โมเดล 9 หรือไม่
+            if (parentModel.name === 'TeleportModel9' || clickedObject.name === 'TeleportModel9') {
+              console.log('🔄 Clicked Model 9 - Rotating Model 6 back to original position...');
+              
+              // หาโมเดล 6 ในฉาก
+              const model6 = scene.children.find(child => child.name === 'NameModel6');
+              
+              if (model6) {
+                // หมุนโมเดล 6 กลับไปที่มุมเดิม
+                const originalRotation = model6.userData.originalRotationY || Math.PI / 6;
+                model6.rotation.y = originalRotation;
+                console.log('✅ Model 6 rotated back to original angle:', originalRotation);
+              } else {
+                console.log('❌ Model 6 not found in scene');
+              }
+            }
+            
+            console.log('🎯 Regular model clicked, moving camera closer...');
+            // คำนวณตำแหน่งที่กล้องควรไป (ห่างจากจุดที่คลิก 3 หน่วย)
+            const direction = new THREE.Vector3().subVectors(camera.position, clickedPosition).normalize();
+            const targetPos = new THREE.Vector3().addVectors(clickedPosition, direction.multiplyScalar(3));
+             
+            // เดินทางไปยังตำแหน่งนั้น
+            animateCameraTo(targetPos, clickedPosition);
+          }
+        }
+      }
+
+      // เพิ่ม event listener สำหรับการคลิก
+      document.addEventListener('click', onMouseClick);
+
+      // 🖱️ Event listener สำหรับ mouse hover detection
+      document.addEventListener('mousemove', onMouseMove);
+
+      // ฟังก์ชันกลับไปยังจุดเริ่มต้น
+      function returnToStartPosition() {
+        if (isAnimating) return; // ป้องกันการ animate ซ้อน
+        
+        console.log('🏠 Returning to start position...');
+        animateCameraTo(initialCameraPosition, null);
+        
+        // รีเซ็ตการหมุนกล้องไปยังค่าเริ่มต้น
+        setTimeout(() => {
+          pitch = initialCameraPitch;
+          yaw = initialCameraYaw;
+        }, 100); // หน่วงเวลาเล็กน้อยเพื่อให้การ animate เริ่มต้นก่อน
+      }
+
+      // 🖱️ ฟังก์ชันตรวจจับ mouse hover
+      function onMouseMove(event) {
+        if (!model8 && !model11) return; // ถ้ายังไม่โหลดโมเดลเสร็จ
+        
+        // คำนวณ mouse position
+        const rect = renderer.domElement.getBoundingClientRect();
+        mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+        
+        // ตั้งค่า raycaster
+        raycaster.setFromCamera(mouse, camera);
+        
+        // สร้าง array ของโมเดลที่ต้องตรวจสอบ hover
+        const modelsToCheck = [];
+        if (model8) modelsToCheck.push(model8);
+        if (model11) modelsToCheck.push(model11);
+        
+        // ตรวจสอบการชนกับโมเดล
+        const intersects = raycaster.intersectObjects(modelsToCheck, true);
+        
+        // อัปเดตสถานะ hover สำหรับโมเดล 8
+        const wasModel8Hovered = isModel8Hovered;
+        isModel8Hovered = model8 && intersects.some(intersect => {
+          let parent = intersect.object;
+          while (parent && parent !== scene) {
+            if (parent === model8) return true;
+            parent = parent.parent;
+          }
+          return false;
+        });
+        
+        // อัปเดตสถานะ hover สำหรับโมเดล 11
+        const wasModel11Hovered = isModel11Hovered;
+        isModel11Hovered = model11 && intersects.some(intersect => {
+          let parent = intersect.object;
+          while (parent && parent !== scene) {
+            if (parent === model11) return true;
+            parent = parent.parent;
+          }
+          return false;
+        });
+        
+        // แสดง log เมื่อสถานะเปลี่ยน
+        if (wasModel8Hovered !== isModel8Hovered) {
+          console.log(`🖱️ Model 8 hover state: ${isModel8Hovered ? 'HOVERED' : 'NOT HOVERED'}`);
+        }
+        if (wasModel11Hovered !== isModel11Hovered) {
+          console.log(`🖱️ Model 11 hover state: ${isModel11Hovered ? 'HOVERED' : 'NOT HOVERED'}`);
+        }
+        
+        // เปลี่ยน cursor style
+        document.body.style.cursor = (isModel8Hovered || isModel11Hovered) ? 'pointer' : 'default';
+      }
+
+      // 🔸 Event Listeners สำหรับ Q และการเคลื่อนที่
+      document.addEventListener('keydown', (event) => {
+        switch (event.code) {
+          case 'KeyQ':
+            event.preventDefault();
+            if (isFPSMode) {
+              console.log('🔴 Exiting FPS mode...');
+              exitFPSMode();
+            } else {
+              console.log('🟢 Entering FPS mode...');
+              enterFPSMode();
+            }
+            break;
+          case 'KeyW': 
+            if (isFPSMode) moveForward = true; 
+            break;
+          case 'KeyS': 
+            if (isFPSMode) moveBackward = true; 
+            break;
+          case 'KeyA': 
+            if (isFPSMode) moveLeft = true; 
+            break;
+          case 'KeyD': 
+            if (isFPSMode) moveRight = true; 
+            break;
+          case 'Space': 
+            if (isFPSMode) {
+              event.preventDefault(); // ป้องกัน scroll
+              moveUp = true;
+            }
+            break;
+          case 'ShiftLeft':
+          case 'ShiftRight':
+            if (isFPSMode) moveDown = true; 
+            break;
+        }
+      });
+
+      document.addEventListener('keyup', (event) => {
+        switch (event.code) {
+          case 'KeyW': 
+            moveForward = false; 
+            break;
+          case 'KeyS': 
+            moveBackward = false; 
+            break;
+          case 'KeyA': 
+            moveLeft = false; 
+            break;
+          case 'KeyD': 
+            moveRight = false; 
+            break;
+          case 'Space': 
+            moveUp = false; 
+            break;
+          case 'ShiftLeft':
+          case 'ShiftRight':
+            moveDown = false; 
+            break;
+        }
+      });
+
+      // --- ตัวแปรสำหรับแอนิเมชันเมื่อคลิก ---
+      let isClicked = false;
+      let clickTime = 0;
+
+      // --- ตัวแปรสำหรับ animation สีและแสง ---
+      let time = 0;
+      let model8 = null; // เก็บ reference ของโมเดล 8
+      let isModel8Hovered = false; // สถานะการ hover โมเดล 8
+      let model11 = null; // เก็บ reference ของโมเดล 11
+      let isModel11Hovered = false; // สถานะการ hover โมเดล 11
+
+      // Render loop
+      function animate() {
+        requestAnimationFrame(animate);
+
+    // ✅ เคลื่อนที่ใน FPS mode เท่านั้น
+    if (isFPSMode) {
+      const moveZ = (moveForward ? 1 : 0) - (moveBackward ? 1 : 0); // + = เดินหน้า
+      const moveX = (moveRight   ? 1 : 0) - (moveLeft     ? 1 : 0); // + = ไปขวา
+      const moveY = (moveUp      ? 1 : 0) - (moveDown     ? 1 : 0); // + = ลอยขึ้น
+
+      // การเคลื่อนที่แนวนอน (X, Z)
+      if (moveZ !== 0 || moveX !== 0) {
+          // หาทิศ "หน้า" ของกล้อง แล้วตัดแกน Y ออก (ไม่ให้กล้องเอียงตาม pitch)
+          camera.getWorldDirection(forwardVec);
+          forwardVec.y = 0;
+          forwardVec.normalize();
+
+          // หาทิศ "ขวา" ของกล้อง
+          rightVec.crossVectors(forwardVec, camera.up).normalize();
+
+          // ขยับตำแหน่งกล้องตามปุ่มกด
+          camera.position.addScaledVector(forwardVec, moveZ * speed); // W/S
+          camera.position.addScaledVector(rightVec,   moveX * speed); // A/D
+      }
+
+      // การเคลื่อนที่แนวตั้ง (Y) - ลอยขึ้น/ลง อิสระ
+      if (moveY !== 0) {
+          camera.position.y += moveY * speed; // Space/Shift
+      }
+    }
+
+    // 🎯 อัปเดตการ animate กล้อง
+    if (isAnimating) {
+      const elapsed = performance.now() - animationStartTime;
+      const progress = Math.min(elapsed / animationDuration, 1);
+      
+      // Smooth easing function
+      const easedProgress = progress * progress * (3 - 2 * progress);
+      
+      // Interpolate position
+      camera.position.lerpVectors(startPosition, targetPosition, easedProgress);
+      
+      // Interpolate rotation
+      pitch = startRotation.pitch + (targetRotation.pitch - startRotation.pitch) * easedProgress;
+      yaw = startRotation.yaw + (targetRotation.yaw - startRotation.yaw) * easedProgress;
+      
+      // Apply rotation
+      camera.rotation.order = 'YXZ';
+      camera.rotation.y = yaw;
+      camera.rotation.x = pitch;
+      
+      // เสร็จสิ้นการ animate
+      if (progress >= 1) {
+        isAnimating = false;
+      }
+    }
+
+    // 🔹 อัปเดต GUI แสดงตำแหน่งและการหมุนกล้อง
+    const yawDegrees = (yaw * 180 / Math.PI).toFixed(0);
+    const pitchDegrees = (pitch * 180 / Math.PI).toFixed(0);
+    info.textContent = `Position: X:${camera.position.x.toFixed(1)} Y:${camera.position.y.toFixed(1)} Z:${camera.position.z.toFixed(1)} | Rotation: Yaw:${yawDegrees}° Pitch:${pitchDegrees}° | FPS Mode: ${isPointerLocked ? 'ON' : 'OFF'}`;
+
+    // --- แอนิเมชันเคลื่อนไหวเบาๆ เมื่อคลิก (ปิดใช้งาน) ---
+    // โมเดลไม่หมุน แต่ให้มุมกล้องหมุนเหมือนเดิมผ่านระบบ camera animation
+
+    // --- Animation breath สีเดียว (โมเดล 8 และ โมเดล 11) ---
+    if (model8 || model11) {
+      time += 0.02;
+      
+      // ฟังก์ชันสำหรับจัดการสีของโมเดล
+      const applyModelColorEffect = (model, isHovered, baseColor = 0x84C1FF) => {
+        model.traverse((child) => {
+        if (child.isMesh && child.material) {
+          
+          // 🎨 สีหลักที่ใช้ตลอด (เปลี่ยนได้ง่าย)
+          const baseColor = 0x84C1FF; // สีฟ้าสด (เปลี่ยนเป็นสีอื่นได้)
+          
+          if (isHovered) {
+            // 🖱️ เมื่อ hover - เปลี่ยนเป็นสีส้มแดงสดแบบปกติ (ไม่มี animation)
+            const hoverColor = 0xFF6600; // สีส้มแดงสด
+            
+            // ตั้งค่าสีคงที่เมื่อ hover (ไม่เปลี่ยนแปลง)
+            child.material.color.setHex(hoverColor);
+            
+            // เอฟเฟกต์แสงเรืองแบบคงที่
+            if (child.material.emissive) {
+              child.material.emissive.setHex(0xFF4400); // สีส้มเข้ม
+              child.material.emissiveIntensity = 0.6; // ความเข้มคงที่
+            }
+            
+          } else {
+            // � สีปกติ - breath effect กับสีเดียว
+            
+            // Breath effect - การหายใจช้าๆ สงบ
+            const breathIntensity = (Math.sin(time * 1.5) * 0.2 + 0.8); // 0.6-1.0 range
+            
+            // ปรับสีตาม breath intensity
+            const r = Math.floor(((baseColor >> 16) & 0xFF) * breathIntensity);
+            const g = Math.floor(((baseColor >> 8) & 0xFF) * breathIntensity);
+            const b = Math.floor((baseColor & 0xFF) * breathIntensity);
+            const breathColor = (r << 16) | (g << 8) | b;
+            
+            child.material.color.setHex(breathColor);
+            
+            // เอฟเฟกต์แสงเรืองที่หายใจด้วย
+            if (child.material.emissive) {
+              // ใช้สีเดียวกันแต่เข้มกว่า
+              const emissiveR = Math.floor(r * 0.4);
+              const emissiveG = Math.floor(g * 0.4);
+              const emissiveB = Math.floor(b * 0.4);
+              const emissiveColor = (emissiveR << 16) | (emissiveG << 8) | emissiveB;
+              
+              child.material.emissive.setHex(emissiveColor);
+              child.material.emissiveIntensity = breathIntensity * 0.5;
+            }
+          }
+          
+          child.material.needsUpdate = true;
+        }
+      });
+      };
+      
+      // ใช้เอฟเฟกต์กับโมเดล 8
+      if (model8) {
+        applyModelColorEffect(model8, isModel8Hovered, 0x84C1FF); // สีฟ้าสด
+      }
+      
+      // ใช้เอฟเฟกต์เดียวกันกับโมเดล 11
+      if (model11) {
+        applyModelColorEffect(model11, isModel11Hovered, 0x84C1FF); // สีเดียวกันกับโมเดล 8
+      }
+    }
+
+    // 🔸 เรนเดอร์ฉาก
+    renderer.render(scene, camera);
+}
+
+      // --- เมื่อคลิกที่โมเดล (ปิดใช้งานแอนิเมชันโมเดล) ---
+      // การคลิกจะใช้ระบบ FPS mode กับ onMouseClick function แทน
+
+animate();
+    </script>
+  </body>
+</html>
