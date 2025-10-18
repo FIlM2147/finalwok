@@ -92,12 +92,12 @@ const cameraPoints = {
     sign_base:  { pos: new THREE.Vector3(0, 2, 8), rotY: 0 }
 };
 
-      camera.position.set(28, 1.5, 1.5);
+      camera.position.set(28, 7.5, 1.5);
       
       // เก็บตำแหน่งเริ่มต้นของกล้อง
-      const initialCameraPosition = new THREE.Vector3(28, 1.5, 1.5);
-      const initialCameraPitch = Math.PI / 6; // เอียงขึ้น 30 องศา
-      const initialCameraYaw = 0;
+      const initialCameraPosition = new THREE.Vector3(28, 7.5, 1.5);
+      const initialCameraPitch = -9 * Math.PI / 180; // -9 องศา แปลงเป็น radians
+      const initialCameraYaw = -370 * Math.PI / 180; // -370 องศา แปลงเป็น radians
       
       // ตั้งค่ามุมกล้องเริ่มต้น
       camera.rotation.order = 'YXZ';
@@ -105,7 +105,7 @@ const cameraPoints = {
       camera.rotation.y = initialCameraYaw;
       
       // FPS Controls - ใช้ ESC เพื่อเปิด/ปิด FPS mode
-      let pitch = Math.PI / 6, yaw = 0; // เริ่มต้นด้วยมุมเอียง
+      let pitch = initialCameraPitch, yaw = initialCameraYaw; // ใช้ค่าเดียวกับ initial
       const mouseSensitivity = 0.002;
       let isPointerLocked = false;
       let isFPSMode = false; // สถานะ FPS mode แยกจาก pointer lock
@@ -182,6 +182,8 @@ const cameraPoints = {
       instructions.innerHTML = `
         <strong>🎮 Controls:</strong><br>
         <span style="color: #ffff00;">Q</span>: Enter/Exit FPS mode<br>
+        <br><strong>🖱️ In Normal Mode:</strong><br>
+        <span style="color: #00ff00;">Mouse hover</span>: Hover over back models to see color change<br>
         <br><strong>🎯 In FPS Mode:</strong><br>
         <span style="color: #00ff00;">WASD</span>: Move around<br>
         <span style="color: #00ff00;">Space</span>: Fly up<br>
@@ -305,7 +307,7 @@ const cameraPoints = {
             }
           });
 
-          model1.position.set(0.5, 0.5, 0.5);
+          model1.position.set(0.5, 5.5, 0.5);
           model1.scale.set(1.5, 1.5, 1.5);
           scene.add(model1);
           clickableObjects.push(model1);
@@ -590,7 +592,7 @@ const cameraPoints = {
           });
 
           // ตำแหน่งด้านขวาหลัง ลอยกลางอากาศ
-          loadedModel7.position.set(27, 0.7, -8.2);
+          loadedModel7.position.set(27, 5.7, -8.2);
           loadedModel7.scale.set(2, 2, 2);
           
           // ตั้งค่า userData สำหรับโมเดล 7 - ไปยังตำแหน่งเฉพาะ
@@ -654,6 +656,13 @@ const cameraPoints = {
               child.receiveShadow = true;
               if (child.material && child.material.map) {
                 child.material.map.encoding = THREE.sRGBEncoding;
+                child.material.needsUpdate = true;
+              }
+
+              // ✅ Initialize emissive properties สำหรับ animation effects
+              if (child.material) {
+                if (!child.material.emissive) child.material.emissive = new THREE.Color(0x000000);
+                if (typeof child.material.emissiveIntensity !== 'number') child.material.emissiveIntensity = 0.0;
                 child.material.needsUpdate = true;
               }
             }
@@ -727,7 +736,7 @@ const cameraPoints = {
           });
 
           // ตำแหน่งและขนาด - ปรับตามต้องการ
-          loadedModel9.position.set(27, -0.7, -8.2); // ตำแหน่งใหม่
+          loadedModel9.position.set(27, 3.7, -8.2); // ตำแหน่งใหม่
           loadedModel9.scale.set(2, 2, 2);
           
           // ตั้งค่า userData สำหรับโมเดล 9 - ไปยังตำแหน่งเฉพาะ
@@ -860,6 +869,13 @@ const cameraPoints = {
                 child.material.map.encoding = THREE.sRGBEncoding;
                 child.material.needsUpdate = true;
               }
+
+              // ✅ Initialize emissive properties สำหรับ animation effects
+              if (child.material) {
+                if (!child.material.emissive) child.material.emissive = new THREE.Color(0x000000);
+                if (typeof child.material.emissiveIntensity !== 'number') child.material.emissiveIntensity = 0.0;
+                child.material.needsUpdate = true;
+              }
             }
           });
 
@@ -913,6 +929,7 @@ const cameraPoints = {
       // 🎯 ระบบคลิก 3D Objects
       const raycaster = new THREE.Raycaster();
       const mouse = new THREE.Vector2();
+      const mouseNDC = new THREE.Vector2(0, 0);
       let clickableObjects = []; // เก็บ objects ที่คลิกได้
       
       // ตัวแปรสำหรับ camera animation
@@ -1090,9 +1107,6 @@ const cameraPoints = {
       // เพิ่ม event listener สำหรับการคลิก
       document.addEventListener('click', onMouseClick);
 
-      // 🖱️ Event listener สำหรับ mouse hover detection
-      document.addEventListener('mousemove', onMouseMove);
-
       // ฟังก์ชันกลับไปยังจุดเริ่มต้น
       function returnToStartPosition() {
         if (isAnimating) return; // ป้องกันการ animate ซ้อน
@@ -1107,59 +1121,19 @@ const cameraPoints = {
         }, 100); // หน่วงเวลาเล็กน้อยเพื่อให้การ animate เริ่มต้นก่อน
       }
 
-      // 🖱️ ฟังก์ชันตรวจจับ mouse hover
-      function onMouseMove(event) {
-        if (!model8 && !model11) return; // ถ้ายังไม่โหลดโมเดลเสร็จ
-        
-        // คำนวณ mouse position
-        const rect = renderer.domElement.getBoundingClientRect();
-        mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-        mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-        
-        // ตั้งค่า raycaster
-        raycaster.setFromCamera(mouse, camera);
-        
-        // สร้าง array ของโมเดลที่ต้องตรวจสอบ hover
-        const modelsToCheck = [];
-        if (model8) modelsToCheck.push(model8);
-        if (model11) modelsToCheck.push(model11);
-        
-        // ตรวจสอบการชนกับโมเดล
-        const intersects = raycaster.intersectObjects(modelsToCheck, true);
-        
-        // อัปเดตสถานะ hover สำหรับโมเดล 8
-        const wasModel8Hovered = isModel8Hovered;
-        isModel8Hovered = model8 && intersects.some(intersect => {
-          let parent = intersect.object;
-          while (parent && parent !== scene) {
-            if (parent === model8) return true;
-            parent = parent.parent;
-          }
-          return false;
-        });
-        
-        // อัปเดตสถานะ hover สำหรับโมเดล 11
-        const wasModel11Hovered = isModel11Hovered;
-        isModel11Hovered = model11 && intersects.some(intersect => {
-          let parent = intersect.object;
-          while (parent && parent !== scene) {
-            if (parent === model11) return true;
-            parent = parent.parent;
-          }
-          return false;
-        });
-        
-        // แสดง log เมื่อสถานะเปลี่ยน
-        if (wasModel8Hovered !== isModel8Hovered) {
-          console.log(`🖱️ Model 8 hover state: ${isModel8Hovered ? 'HOVERED' : 'NOT HOVERED'}`);
-        }
-        if (wasModel11Hovered !== isModel11Hovered) {
-          console.log(`🖱️ Model 11 hover state: ${isModel11Hovered ? 'HOVERED' : 'NOT HOVERED'}`);
-        }
-        
-        // เปลี่ยน cursor style
-        document.body.style.cursor = (isModel8Hovered || isModel11Hovered) ? 'pointer' : 'default';
-      }
+      
+
+     // 🖱️ ฟังก์ชันคำนวณตำแหน่งเมาส์แบบ NDC จาก renderer โดยตรง
+function onMouseMove(e) {
+  const rect = renderer.domElement.getBoundingClientRect();
+  mouseNDC.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  mouseNDC.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+}
+
+// ✅ ผูก event กับ document เพื่อให้ทำงานทั้ง FPS และ normal mode
+document.addEventListener('mousemove', onMouseMove);
+
+      
 
       // 🔸 Event Listeners สำหรับ Q และการเคลื่อนที่
       document.addEventListener('keydown', (event) => {
@@ -1241,6 +1215,9 @@ const cameraPoints = {
       // Render loop
       function animate() {
         requestAnimationFrame(animate);
+
+        // ✅ คำนวณ hover ทุกเฟรม (ใน Normal mode เท่านั้น)
+        updateHoverStates();
 
     // ✅ เคลื่อนที่ใน FPS mode เท่านั้น
     if (isFPSMode) {
@@ -1405,6 +1382,53 @@ function updateModel79Interaction(time) {
         child.material.emissiveIntensity = 0.25 + ripple * 0.6;
       }
     });
+  }
+}
+
+function updateHoverStates() {
+  // ✅ ทำงานเฉพาะใน Normal mode (ไม่ใช่ FPS mode)
+  if (isFPSMode) {
+    // รีเซ็ต hover state เมื่ออยู่ใน FPS mode
+    isModel8Hovered = false;
+    isModel11Hovered = false;
+    document.body.style.cursor = 'default';
+    return;
+  }
+
+  // ถ้ายังไม่มีโมเดลก็ไม่ต้องเช็ค
+  if (!model8 && !model11) return;
+
+  // ใช้ mouseNDC ที่อัปเดตจาก mousemove event
+  raycaster.setFromCamera(mouseNDC, camera);
+
+  // เช็คแบบแยกชิ้น ชัด ๆ
+  let hit8 = false, hit11 = false;
+
+  if (model8) {
+    const i8 = raycaster.intersectObject(model8, true);
+    hit8 = i8.length > 0;
+  }
+  if (model11) {
+    const i11 = raycaster.intersectObject(model11, true);
+    hit11 = i11.length > 0;
+  }
+
+  // อัปเดต state เฉพาะเมื่อมีการเปลี่ยนแปลง
+  const previousModel8Hovered = isModel8Hovered;
+  const previousModel11Hovered = isModel11Hovered;
+  
+  isModel8Hovered = hit8;
+  isModel11Hovered = hit11;
+
+  // เปลี่ยน cursor เฉพาะใน Normal mode
+  document.body.style.cursor = (hit8 || hit11) ? 'pointer' : 'default';
+  
+  // Debug log เมื่อสถานะเปลี่ยน (เฉพาะใน Normal mode)
+  if (previousModel8Hovered !== hit8) {
+    console.log(`[Normal Mode] Model 8 hover state changed: ${hit8}`);
+  }
+  if (previousModel11Hovered !== hit11) {
+    console.log(`[Normal Mode] Model 11 hover state changed: ${hit11}`);
   }
 }
 
