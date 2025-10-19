@@ -466,7 +466,6 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/dat.gui@0.7.9/build/dat.gui.min.js"></script>
 
   <script>
     // Loading Screen Controller
@@ -1108,24 +1107,7 @@
     ground.receiveShadow = true;
     scene.add(ground);
 
-    // GUI Controls
-    const gui = new dat.GUI();
-    const lightFolder = gui.addFolder("Light");
-
-    // เพิ่มการควบคุม ambient light (ใช้ reference ที่มีอยู่แล้ว)
-    lightFolder
-      .add(ambientLight, "intensity", 0, 1, 0.1)
-      .name("Ambient Intensity");
-
-    // ควบคุม Directional Light
-    lightFolder
-      .add(dirLight, "intensity", 0, 2, 0.1)
-      .name("Directional Intensity");
-    lightFolder.add(dirLight.position, "x", -200, 200).name("DirLight X");
-    lightFolder.add(dirLight.position, "y", -200, 200).name("DirLight Y");
-    lightFolder.add(dirLight.position, "z", -200, 200).name("DirLight Z");
-
-    lightFolder.open();
+    // Removed GUI Controls for lighting
 
     // --- Load GLB Models ---
 
