@@ -2320,9 +2320,11 @@
     let time = 0;
     let model4 = null; // เก็บ reference ของโมเดล 4 (สำหรับการหมุน)
     let model7 = null; // เก็บ reference ของโมเดล 7
+    let isModel7Hovered = false; // สถานะการ hover โมเดล 7
     let model8 = null; // เก็บ reference ของโมเดล 8
     let isModel8Hovered = false; // สถานะการ hover โมเดล 8
     let model9 = null; // เก็บ reference ของโมเดล 9
+    let isModel9Hovered = false; // สถานะการ hover โมเดล 9
     let model11 = null; // เก็บ reference ของโมเดล 11
     let isModel11Hovered = false; // สถานะการ hover โมเดล 11
     let baseY_model7 = 0;
@@ -2436,9 +2438,19 @@
           });
         };
 
+        // ใช้เอฟเฟกต์กับโมเดล 7
+        if (model7) {
+          applyModelColorEffect(model7, isModel7Hovered, 0x00ffff); // สีฟ้านีออน
+        }
+
         // ใช้เอฟเฟกต์กับโมเดล 8
         if (model8) {
           applyModelColorEffect(model8, isModel8Hovered, 0x84C1FF); // สีฟ้าสด
+        }
+
+        // ใช้เอฟเฟกต์กับโมเดล 9
+        if (model9) {
+          applyModelColorEffect(model9, isModel9Hovered, 0x00ffff); // สีฟ้านีออน
         }
 
         // ใช้เอฟเฟกต์เดียวกันกับโมเดล 11
@@ -2462,30 +2474,31 @@
       if (model7) {
         // เอฟเฟกต์ลอยขึ้นลงเบา ๆ
         const floatY = Math.sin(time * 2) * 0.2;
-        model7.position.y = baseY_model7 + floatY;
-
-        // เอฟเฟกต์ ripple แสงเรืองแบบ hologram
-        model7.traverse((child) => {
-          if (child.isMesh && child.material && child.material.emissive) {
-            const ripple = (Math.sin(time * 8 + child.id * 0.5) * 0.5 + 0.5);
-            child.material.emissive.setHex(0x00ffff); // สีฟ้านีออน hologram
-            child.material.emissiveIntensity = 0.3 + ripple * 0.7;
-          }
-        });
+        model7.position.y = baseY_model7 + floatY;      // เอฟเฟกต์ ripple แสงเรืองแบบ hologram (เฉพาะเมื่อไม่ hover)
+        if (!isModel7Hovered) {
+          model7.traverse((child) => {
+            if (child.isMesh && child.material && child.material.emissive) {
+              const ripple = (Math.sin(time * 8 + child.id * 0.5) * 0.5 + 0.5);
+              child.material.emissive.setHex(0x00ffff); // สีฟ้านีออน hologram
+              child.material.emissiveIntensity = 0.3 + ripple * 0.7;
+            }
+          });
+        }
       }
 
       // ---- Model 9 ----
       if (model9) {
         const floatY = Math.sin(time * 2.2) * 0.2;
-        model9.position.y = baseY_model9 + floatY;
-
-        model9.traverse((child) => {
-          if (child.isMesh && child.material && child.material.emissive) {
-            const ripple = (Math.sin(time * 8 + child.id * 0.4) * 0.5 + 0.5);
-            child.material.emissive.setHex(0x00ffff);
-            child.material.emissiveIntensity = 0.25 + ripple * 0.6;
-          }
-        });
+        model9.position.y = baseY_model9 + floatY;      // เอฟเฟกต์ ripple แสงเรืองแบบ hologram (เฉพาะเมื่อไม่ hover)
+        if (!isModel9Hovered) {
+          model9.traverse((child) => {
+            if (child.isMesh && child.material && child.material.emissive) {
+              const ripple = (Math.sin(time * 8 + child.id * 0.4) * 0.5 + 0.5);
+              child.material.emissive.setHex(0x00ffff);
+              child.material.emissiveIntensity = 0.25 + ripple * 0.6;
+            }
+          });
+        }
       }
     }
 
@@ -2493,17 +2506,25 @@
       // ✅ ทำงานใน Normal mode เท่านั้น
 
       // ถ้ายังไม่มีโมเดลก็ไม่ต้องเช็ค
-      if (!model8 && !model11) return;
+      if (!model7 && !model8 && !model9 && !model11) return;
 
       // ใช้ mouseNDC ที่อัปเดตจาก mousemove event
       raycaster.setFromCamera(mouseNDC, camera);
 
       // เช็คแบบแยกชิ้น ชัด ๆ
-      let hit8 = false, hit11 = false;
+      let hit7 = false, hit8 = false, hit9 = false, hit11 = false;
 
+      if (model7) {
+        const i7 = raycaster.intersectObject(model7, true);
+        hit7 = i7.length > 0;
+      }
       if (model8) {
         const i8 = raycaster.intersectObject(model8, true);
         hit8 = i8.length > 0;
+      }
+      if (model9) {
+        const i9 = raycaster.intersectObject(model9, true);
+        hit9 = i9.length > 0;
       }
       if (model11) {
         const i11 = raycaster.intersectObject(model11, true);
@@ -2511,18 +2532,28 @@
       }
 
       // อัปเดต state เฉพาะเมื่อมีการเปลี่ยนแปลง
+      const previousModel7Hovered = isModel7Hovered;
       const previousModel8Hovered = isModel8Hovered;
+      const previousModel9Hovered = isModel9Hovered;
       const previousModel11Hovered = isModel11Hovered;
 
+      isModel7Hovered = hit7;
       isModel8Hovered = hit8;
+      isModel9Hovered = hit9;
       isModel11Hovered = hit11;
 
-      // เปลี่ยน cursor เฉพาะใน Normal mode
-      document.body.style.cursor = (hit8 || hit11) ? 'pointer' : 'default';
+      // เปลี่ยน cursor เฉพาะใน Normal mode (เช็คทุกโมเดล)
+      document.body.style.cursor = (hit7 || hit8 || hit9 || hit11) ? 'pointer' : 'default';
 
       // Debug log เมื่อสถานะเปลี่ยน (เฉพาะใน Normal mode)
+      if (previousModel7Hovered !== hit7) {
+        console.log(`[Normal Mode] Model 7 hover state changed: ${hit7}`);
+      }
       if (previousModel8Hovered !== hit8) {
         console.log(`[Normal Mode] Model 8 hover state changed: ${hit8}`);
+      }
+      if (previousModel9Hovered !== hit9) {
+        console.log(`[Normal Mode] Model 9 hover state changed: ${hit9}`);
       }
       if (previousModel11Hovered !== hit11) {
         console.log(`[Normal Mode] Model 11 hover state changed: ${hit11}`);
