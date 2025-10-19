@@ -434,6 +434,27 @@
         </div>
       </div>
 
+      <!-- Controls Instructions -->
+      <div style="margin-bottom: 20px;">
+        <h3
+          style="color: #00ffff; margin: 0 0 10px 0; font-family: 'Courier New', monospace; text-shadow: 0 0 10px #00ffff;">
+          🎮 CONTROLS</h3>
+        <div style="color: #ffffff; font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.4;">
+          <div style="margin-bottom: 8px;">
+            <span style="color: #00ff00;">Left-click + Drag:</span> Rotate around scene
+          </div>
+          <div style="margin-bottom: 8px;">
+            <span style="color: #00ff00;">Scroll:</span> Zoom in/out
+          </div>
+          <div style="margin-bottom: 8px;">
+            <span style="color: #ff6600;">Click Teleport Models:</span> Go to special locations
+          </div>
+          <div style="margin-bottom: 8px;">
+            <span style="color: #ff9900;">Click Back Models:</span> Return to start position
+          </div>
+        </div>
+      </div>
+
       <!-- Close Button -->
       <button id="closeSettings"
         style="width: 100%; padding: 10px; background: rgba(100,0,0,0.8); color: white; border: 1px solid #ff4444; border-radius: 5px; cursor: pointer; font-family: 'Courier New', monospace;">
@@ -1027,7 +1048,7 @@
     camera.position.set(27.5, 8.8, 4.4); // ห่างจากจุดศูนย์กลาง
 
     // เก็บตำแหน่งเริ่มต้นของกล้อง
-    const initialCameraPosition = new THREE.Vector3(30, 9, 3.5);
+    const initialCameraPosition = new THREE.Vector3(27.5, 8.8, 4.4);
     const initialCameraPitch = -9 * Math.PI / 180; // -9 องศา แปลงเป็น radians
     const initialCameraYaw = -370 * Math.PI / 180; // -370 องศา แปลงเป็น radians
 
@@ -1052,44 +1073,7 @@
     // Variables for camera animation
     let pitch = initialCameraPitch, yaw = initialCameraYaw;
 
-    // แสดงคำแนะนำ (ปรับเป็นคำแนะนำของโหมดปกติ)
-    const instructions = document.createElement('div');
-    instructions.style.position = 'absolute';
-    instructions.style.top = '10px';
-    instructions.style.left = '10px';
-    instructions.style.color = 'white';
-    instructions.style.backgroundColor = 'rgba(0,0,0,0.8)';
-    instructions.style.padding = '15px';
-    instructions.style.borderRadius = '8px';
-    instructions.style.fontFamily = 'Arial, sans-serif';
-    instructions.style.fontSize = '14px';
-    instructions.style.zIndex = '1000';
-    instructions.innerHTML = `
-        <strong>🎮 Controls (Orbit Mode):</strong><br>
-        <span style="color: #00ff00;">Left-click + Drag</span>: Rotate around scene<br>
-        <span style="color: #00ff00;">Scroll</span>: Zoom in/out<br>
-        <br><strong>🎯 Special Models:</strong><br>
-        <span style="color: #ff6600;">Click Teleport Models</span>: Go to special locations<br>
-        <span style="color: #ff9900;">Click Back Models</span>: Return to start position<br>
-        <br><strong>⚙️ Settings Panel:</strong><br>
-        <span style="color: #00ffff;">Settings Button</span>: Open/Close settings<br>
-        <span style="color: #ffcc00;">☀️ DAY / 🌙 NIGHT</span>: Switch environment<br>
-        <span style="color: #ff69b4;">🎵 Music Controls</span>: Play/Pause, Volume, Track selection
-      `;
-    document.body.appendChild(instructions);
-
-    // 🔹 GUI แสดงตำแหน่งกล้อง
-    const info = document.createElement("div");
-    info.style.position = "fixed";
-    info.style.top = "10px";
-    info.style.left = "10px";
-    info.style.color = "white";
-    info.style.background = "rgba(0,0,0,0.5)";
-    info.style.padding = "5px 10px";
-    info.style.borderRadius = "8px";
-    info.style.fontFamily = "monospace";
-    info.style.zIndex = "10";
-    document.body.appendChild(info);
+    // ลบคำแนะนำและตัวแสดงพิกัดออก - ย้ายไปใน settings แล้ว
 
     // Light - ลดความเข้มแสงเพื่อให้พื้นหลังอวกาศดูเข้มขึ้น
     const ambientLight = new THREE.AmbientLight(0x404040, 1.0); // ลดจาก 2.0 เป็น 0.3 และเปลี่ยนเป็นสีเทา
@@ -2408,11 +2392,7 @@
         }
       }
 
-      // 🔹 อัปเดต GUI แสดงตำแหน่งและการหมุนกล้อง
-      const yawDegrees = (yaw * 180 / Math.PI).toFixed(0);
-      const pitchDegrees = (pitch * 180 / Math.PI).toFixed(0);
-      const animatingStatus = isAnimating ? 'TELEPORTING' : 'ORBIT';
-      info.textContent = `Position: X:${camera.position.x.toFixed(1)} Y:${camera.position.y.toFixed(1)} Z:${camera.position.z.toFixed(1)} | Rotation: Yaw:${yawDegrees}° Pitch:${pitchDegrees}° | Mode: ${animatingStatus}`;
+      // ลบการแสดงพิกัดกล้องออกแล้ว
 
       // --- แอนิเมชันเคลื่อนไหวเบาๆ เมื่อคลิก (ปิดใช้งาน) ---
       // โมเดลไม่หมุน แต่ให้มุมกล้องหมุนเหมือนเดิมผ่านระบบ camera animation
