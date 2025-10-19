@@ -11,42 +11,7 @@
     }
 
     canvas {
-      cursor: crosshair;
-    }
-
-    /* Crosshair สำหรับ FPS mode */
-    .crosshair {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      width: 20px;
-      height: 20px;
-      margin: -10px 0 0 -10px;
-      pointer-events: none;
-      z-index: 1000;
-      display: none;
-    }
-
-    .crosshair::before,
-    .crosshair::after {
-      content: '';
-      position: absolute;
-      background: rgba(255, 255, 255, 0.8);
-      box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
-    }
-
-    .crosshair::before {
-      width: 2px;
-      height: 20px;
-      left: 9px;
-      top: 0;
-    }
-
-    .crosshair::after {
-      width: 20px;
-      height: 2px;
-      left: 0;
-      top: 9px;
+      /* cursor: crosshair; */
     }
 
     /* Loading Screen Styles */
@@ -2615,6 +2580,7 @@
 
     animate();
   </script>
+
 </body>
 
 </html>
