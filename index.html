@@ -215,9 +215,9 @@ const cameraPoints = {
       document.body.appendChild(info);
 
       // Light - ลดความเข้มแสงเพื่อให้พื้นหลังอวกาศดูเข้มขึ้น
-      scene.add(new THREE.AmbientLight(0x404040, 0.3)); // ลดจาก 2.0 เป็น 0.3 และเปลี่ยนเป็นสีเทา
-      const dirLight = new THREE.DirectionalLight(0xffffff, 0.8); // ลดจาก 2.0 เป็น 0.8
-      dirLight.position.set(10, 5, 10);
+      scene.add(new THREE.AmbientLight(0x404040, 1.0)); // ลดจาก 2.0 เป็น 0.3 และเปลี่ยนเป็นสีเทา
+      const dirLight = new THREE.DirectionalLight(0xffffff, 1.5); // ลดจาก 2.0 เป็น 0.8
+      dirLight.position.set(-2.7, 29.2, 80.5);
       dirLight.castShadow = true;
       scene.add(dirLight);
 
@@ -255,12 +255,14 @@ const cameraPoints = {
         .add(ambientLight, "intensity", 0, 1, 0.1)
         .name("Ambient Intensity");
 
+      // ควบคุม Directional Light
       lightFolder
         .add(dirLight, "intensity", 0, 2, 0.1)
         .name("Directional Intensity");
-      lightFolder.add(dirLight.position, "x", -20, 20).name("DirLight X");
-      lightFolder.add(dirLight.position, "y", -20, 20).name("DirLight Y");
-      lightFolder.add(dirLight.position, "z", -20, 20).name("DirLight Z");
+      lightFolder.add(dirLight.position, "x", -200, 200).name("DirLight X");
+      lightFolder.add(dirLight.position, "y", -200, 200).name("DirLight Y");
+      lightFolder.add(dirLight.position, "z", -200, 200).name("DirLight Z");
+      
       lightFolder.open();
 
       // --- Load GLB Models ---
@@ -354,11 +356,23 @@ const cameraPoints = {
             }
           });
 
-          model2.position.set(-17.07, 4.04, -46.33); // อยู่ทางซ้าย ลอยกลางอากาศ
+          model2.position.set(3.1, 0.0, 5.2); // อยู่ทางซ้าย ลอยกลางอากาศ
           model2.scale.set(2.5, 2.5, 2.5);
-          model2.rotation.y = Math.PI / 5; // หมุนเข้าหาศูนย์กลางเล็กน้อย
+          model2.rotation.y = Math.PI / -1 + Math.PI / -1; // หมุนเข้าหาศูนย์กลางเล็กน้อย
+
           scene.add(model2);
           clickableObjects.push(model2);
+
+          console.log("GLB Model 2 loaded successfully");
+        },
+        (progress) => {
+          const percent = progress.total
+            ? (progress.loaded / progress.total) * 100
+            : 0;
+          console.log(`Model 2 Loading: ${percent.toFixed(1)}%`);
+        },
+        (error) => {
+          console.error("Error loading GLB Model 2:", error);
         }
       );
 
@@ -400,7 +414,7 @@ const cameraPoints = {
 
       // Load GLB Model 4 - Back (บนพื้นดิน)
       gltfLoader.load(
-        "https://film2147.github.io/finalwok/space_bunny.glb",
+        "https://film2147.github.io/finalwok/pbrmaterial.glb",
         (gltf) => {
           const model4 = gltf.scene;
 
@@ -415,9 +429,13 @@ const cameraPoints = {
             }
           });
 
-          model4.position.set(-1, 0.2, -4);
-          model4.scale.set(1.5, 1.5, 1.5);
+          model4.position.set(-5.0, 0.2, 5.8);
+          model4.scale.set(0.05, 0.05, 0.05);
           model4.rotation.y = Math.PI; // หมุน 180 องศา
+          
+          // เก็บ reference สำหรับการหมุนแบบต่อเนื่อง
+          window.model4 = model4;
+          
           scene.add(model4);
           clickableObjects.push(model4);
 
@@ -598,9 +616,9 @@ const cameraPoints = {
           // ตั้งค่า userData สำหรับโมเดล 7 - ไปยังตำแหน่งเฉพาะ
           loadedModel7.userData = { 
             isTeleportModel: true, 
-            targetPosition: { x: 1.2, y: 3.1, z: -14.9 },
-            targetPitch: 0 * (Math.PI / 180),   // 0 องศา (ระดับตรง)
-            targetYaw: 169 * (Math.PI / 180),   // 169 องศา (หันขวาเกือบหลังหัน)
+            targetPosition: { x: 0.0, y: 4.7, z: 13.0 },
+            targetPitch: -15 * (Math.PI / 180),   // 0 องศา (ระดับตรง)
+            targetYaw: -357 * (Math.PI / 180),   // 169 องศา (หันขวาเกือบหลังหัน)
             modelName: 'teleport_model_7' 
           };
           loadedModel7.name = 'TeleportModel7';
@@ -880,9 +898,9 @@ const cameraPoints = {
           });
 
           // ตำแหน่งและขนาด - ปรับตามต้องการ
-          model11Temp.position.set(6.1, 0.4, -5.9); // ตำแหน่งใหม่ ระหว่าง model 7 และ model 10
+          model11Temp.position.set(2.8, 0.4, 7.0); // ตำแหน่งใหม่ ระหว่าง model 7 และ model 10
           model11Temp.scale.set(2, 2, 2);
-          model11Temp.rotation.y = Math.PI / 2 + Math.PI / 2; // หมุนเล็กน้อย
+          model11Temp.rotation.y = Math.PI / -1 + Math.PI / -1; // หมุนเล็กน้อย
           
           // ตั้งค่า userData สำหรับโมเดล 11 - กลับไปจุดเริ่มต้น
           model11Temp.userData = { 
@@ -908,6 +926,297 @@ const cameraPoints = {
         },
         (error) => {
           console.error("Error loading GLB Model 11:", error);
+        }
+      );
+
+      // Load GLB Model 12 - Additional Model
+      gltfLoader.load(
+        "https://film2147.github.io/finalwok/silversurfer.glb", // เปลี่ยน URL ตามต้องการ
+        (gltf) => {
+          const model12 = gltf.scene;
+
+          model12.traverse((child) => {
+            if (child.isMesh) {
+              // ตั้งชื่อให้ชัดเจนสำหรับ click detection
+              console.log("🔍 Model12 Mesh:", child.name);
+
+              // ตรวจสอบและลบพื้นหลังที่อาจติดมา
+              if (child.material && child.material.name) {
+                const matName = child.material.name.toLowerCase();
+                if (
+                  matName.includes("background") ||
+                  matName.includes("sky") ||
+                  matName.includes("environment") ||
+                  matName.includes("skybox")
+                ) {
+                  child.visible = false;
+                  console.log("Hidden background mesh in model12:", child.name);
+                  return;
+                }
+              }
+
+              child.castShadow = true;
+              child.receiveShadow = true;
+              if (child.material && child.material.map) {
+                child.material.map.encoding = THREE.sRGBEncoding;
+                child.material.needsUpdate = true;
+              }
+
+              // ✅ Initialize emissive properties สำหรับ animation effects
+              if (child.material) {
+                if (!child.material.emissive) child.material.emissive = new THREE.Color(0x000000);
+                if (typeof child.material.emissiveIntensity !== 'number') child.material.emissiveIntensity = 0.0;
+                child.material.needsUpdate = true;
+              }
+            }
+          });
+
+          // ตำแหน่งและขนาด - ปรับตามต้องการ
+          model12.position.set(10.0, 4.2, 0.4); // ตำแหน่งใหม่
+          model12.scale.set(1.5, 1.5, 1.5);
+          
+          // การหมุนโมเดล 12 ให้มองเห็นได้ชัดเจน
+          model12.rotation.order = 'YXZ';
+          model12.rotation.y = -192 * (Math.PI / 90); // ไม่หมุน yaw (หันหน้าตรง)
+          model12.rotation.x = 0; // ไม่เอียง pitch (ระดับตรง)
+
+          // ตั้งค่า userData สำหรับโมเดล 12
+          model12.userData = { 
+            isInteractable: true, 
+            modelName: 'model_12' 
+          };
+          model12.name = 'Model12';
+          
+          scene.add(model12);  
+          clickableObjects.push(model12);
+
+          console.log("GLB Model 12 loaded successfully");
+          console.log("Model 12 position:", model12.position);
+          console.log("Model 12 scale:", model12.scale);
+          console.log("Model 12 rotation:", model12.rotation);
+          console.log("Total clickable objects:", clickableObjects.length);
+        },
+        (progress) => {
+          const percent = progress.total
+            ? (progress.loaded / progress.total) * 100
+            : 0;
+          console.log(`Model 12 Loading: ${percent.toFixed(1)}%`);
+        },
+        (error) => {
+          console.error("Error loading GLB Model 12:", error);
+        }
+      );
+
+      // Load GLB Model 13 - Additional Model
+      gltfLoader.load(
+        "https://film2147.github.io/finalwok/akira.glb", // เปลี่ยน URL ตามต้องการ
+        (gltf) => {
+          const model13 = gltf.scene;
+
+          model13.traverse((child) => {
+            if (child.isMesh) {
+              // ตั้งชื่อให้ชัดเจนสำหรับ click detection
+              console.log("🔍 Model13 Mesh:", child.name);
+
+              // ตรวจสอบและลบพื้นหลังที่อาจติดมา
+              if (child.material && child.material.name) {
+                const matName = child.material.name.toLowerCase();
+                if (
+                  matName.includes("background") ||
+                  matName.includes("sky") ||
+                  matName.includes("environment") ||
+                  matName.includes("skybox")
+                ) {
+                  child.visible = false;
+                  console.log("Hidden background mesh in model13:", child.name);
+                  return;
+                }
+              }
+
+              child.castShadow = true;
+              child.receiveShadow = true;
+              if (child.material && child.material.map) {
+                child.material.map.encoding = THREE.sRGBEncoding;
+                child.material.needsUpdate = true;
+              }
+
+              // ✅ Initialize emissive properties สำหรับ animation effects
+              if (child.material) {
+                if (!child.material.emissive) child.material.emissive = new THREE.Color(0x000000);
+                if (typeof child.material.emissiveIntensity !== 'number') child.material.emissiveIntensity = 0.0;
+                child.material.needsUpdate = true;
+              }
+            }
+          });
+
+          // ตำแหน่งและขนาด - ปรับตามต้องการ
+          model13.position.set(2.3, 0.0, 3.1); // ตำแหน่งใหม่
+          model13.scale.set(2, 2, 2);
+          model13.rotation.y = -Math.PI / 2; // หมุน -60 องศา
+          
+          // ตั้งค่า userData สำหรับโมเดล 13
+          model13.userData = { 
+            isInteractable: true, 
+            modelName: 'model_13' 
+          };
+          model13.name = 'Model13';
+          
+          scene.add(model13);  
+          clickableObjects.push(model13);
+
+          console.log("GLB Model 13 loaded successfully");
+          console.log("Total clickable objects:", clickableObjects.length);
+        },
+        (progress) => {
+          const percent = progress.total
+            ? (progress.loaded / progress.total) * 100
+            : 0;
+          console.log(`Model 13 Loading: ${percent.toFixed(1)}%`);
+        },
+        (error) => {
+          console.error("Error loading GLB Model 13:", error);
+        }
+      );
+
+      // Load GLB Model 14 - Additional Model
+      gltfLoader.load(
+        "https://film2147.github.io/finalwok/bb8.glb", // เปลี่ยน URL ตามต้องการ
+        (gltf) => {
+          const model14 = gltf.scene;
+
+          model14.traverse((child) => {
+            if (child.isMesh) {
+              // ตั้งชื่อให้ชัดเจนสำหรับ click detection
+              console.log("🔍 Model14 Mesh:", child.name);
+
+              // ตรวจสอบและลบพื้นหลังที่อาจติดมา
+              if (child.material && child.material.name) {
+                const matName = child.material.name.toLowerCase();
+                if (
+                  matName.includes("background") ||
+                  matName.includes("sky") ||
+                  matName.includes("environment") ||
+                  matName.includes("skybox")
+                ) {
+                  child.visible = false;
+                  console.log("Hidden background mesh in model14:", child.name);
+                  return;
+                }
+              }
+
+              child.castShadow = true;
+              child.receiveShadow = true;
+              if (child.material && child.material.map) {
+                child.material.map.encoding = THREE.sRGBEncoding;
+                child.material.needsUpdate = true;
+              }
+
+              // ✅ Initialize emissive properties สำหรับ animation effects
+              if (child.material) {
+                if (!child.material.emissive) child.material.emissive = new THREE.Color(0x000000);
+                if (typeof child.material.emissiveIntensity !== 'number') child.material.emissiveIntensity = 0.0;
+                child.material.needsUpdate = true;
+              }
+            }
+          });
+
+          // ตำแหน่งและขนาด - ปรับตามต้องการ
+          model14.position.set(26.3, 1.1, -5.7); // ตำแหน่งใหม่ ด้านซ้ายหลัง
+          model14.scale.set(9.5, 9.5, 9.5);
+          model14.rotation.y = Math.PI / 4; // หมุน 45 องศา
+          
+          // ตั้งค่า userData สำหรับโมเดล 14
+          model14.userData = { 
+            isInteractable: true, 
+            modelName: 'model_14' 
+          };
+          model14.name = 'Model14';
+          
+          scene.add(model14);  
+          clickableObjects.push(model14);
+
+          console.log("GLB Model 14 loaded successfully");
+          console.log("Total clickable objects:", clickableObjects.length);
+        },
+        (progress) => {
+          const percent = progress.total
+            ? (progress.loaded / progress.total) * 100
+            : 0;
+          console.log(`Model 14 Loading: ${percent.toFixed(1)}%`);
+        },
+        (error) => {
+          console.error("Error loading GLB Model 14:", error);
+        }
+      );
+
+      // Load GLB Model 15 - Additional Model
+      gltfLoader.load(
+        "https://film2147.github.io/finalwok/zerotwo.glb", // เปลี่ยน URL ตามต้องการ
+        (gltf) => {
+          const model15 = gltf.scene;
+
+          model15.traverse((child) => {
+            if (child.isMesh) {
+              // ตั้งชื่อให้ชัดเจนสำหรับ click detection
+              console.log("🔍 Model15 Mesh:", child.name);
+
+              // ตรวจสอบและลบพื้นหลังที่อาจติดมา
+              if (child.material && child.material.name) {
+                const matName = child.material.name.toLowerCase();
+                if (
+                  matName.includes("background") ||
+                  matName.includes("sky") ||
+                  matName.includes("environment") ||
+                  matName.includes("skybox")
+                ) {
+                  child.visible = false;
+                  console.log("Hidden background mesh in model15:", child.name);
+                  return;
+                }
+              }
+
+              child.castShadow = true;
+              child.receiveShadow = true;
+              if (child.material && child.material.map) {
+                child.material.map.encoding = THREE.sRGBEncoding;
+                child.material.needsUpdate = true;
+              }
+
+              // ✅ Initialize emissive properties สำหรับ animation effects
+              if (child.material) {
+                if (!child.material.emissive) child.material.emissive = new THREE.Color(0x000000);
+                if (typeof child.material.emissiveIntensity !== 'number') child.material.emissiveIntensity = 0.0;
+                child.material.needsUpdate = true;
+              }
+            }
+          });
+
+          // ตำแหน่งและขนาด - ปรับตามต้องการ
+          model15.position.set(34.8, 1.1, -5.6); // ตำแหน่งใหม่ ด้านขวาหลัง ลอยขึ้น
+          model15.scale.set(5.0, 5.0, 5.0);
+          model15.rotation.y = Math.PI / -6; // หมุน -60 องศา
+          
+          // ตั้งค่า userData สำหรับโมเดล 15
+          model15.userData = { 
+            isInteractable: true, 
+            modelName: 'model_15' 
+          };
+          model15.name = 'Model15';
+          
+          scene.add(model15);  
+          clickableObjects.push(model15);
+
+          console.log("GLB Model 15 loaded successfully");
+          console.log("Total clickable objects:", clickableObjects.length);
+        },
+        (progress) => {
+          const percent = progress.total
+            ? (progress.loaded / progress.total) * 100
+            : 0;
+          console.log(`Model 15 Loading: ${percent.toFixed(1)}%`);
+        },
+        (error) => {
+          console.error("Error loading GLB Model 15:", error);
         }
       );
 
@@ -1203,6 +1512,7 @@ document.addEventListener('mousemove', onMouseMove);
 
       // --- ตัวแปรสำหรับ animation สีและแสง ---
       let time = 0;
+      let model4 = null; // เก็บ reference ของโมเดล 4 (สำหรับการหมุน)
       let model7 = null; // เก็บ reference ของโมเดล 7
       let model8 = null; // เก็บ reference ของโมเดล 8
       let isModel8Hovered = false; // สถานะการ hover โมเดล 8
@@ -1348,7 +1658,12 @@ document.addEventListener('mousemove', onMouseMove);
       }
     }
 
-    // 🔸 เรนเดอร์ฉาก
+    // � การหมุนโมเดล 4 ตลอดเวลา
+    if (window.model4) {
+      window.model4.rotation.y += 0.01; // หมุนด้วยความเร็ว 0.02 radians ต่อเฟรม
+    }
+
+    // �🔸 เรนเดอร์ฉาก
     updateModel79Interaction(time);
     renderer.render(scene, camera);
 }
