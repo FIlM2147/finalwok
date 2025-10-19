@@ -466,6 +466,8 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/effects/OutlineEffect.js"></script>
 
   <script>
     // Loading Screen Controller
@@ -798,6 +800,7 @@
       constructor() {
         this.clickEffect = document.getElementById('clickEffect');
         this.volume = 0.6; // ระดับเสียงเอฟเฟกต์ 60%
+
         this.initializeAudio();
       }
 
