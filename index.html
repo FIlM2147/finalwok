@@ -47,14 +47,316 @@
         left: 0;
         top: 9px;
       }
+
+      /* Loading Screen Styles */
+      .loading-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle at center, #0a0a2e 0%, #000000 70%);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        animation: starField 20s linear infinite;
+      }
+
+      .loading-screen::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: 
+          radial-gradient(2px 2px at 20px 30px, #ffffff, transparent),
+          radial-gradient(2px 2px at 40px 70px, #ffffff, transparent),
+          radial-gradient(1px 1px at 90px 40px, #ffffff, transparent),
+          radial-gradient(1px 1px at 130px 80px, #ffffff, transparent),
+          radial-gradient(2px 2px at 160px 30px, #ffffff, transparent);
+        background-repeat: repeat;
+        background-size: 200px 100px;
+        animation: moveStars 30s linear infinite;
+        opacity: 0.8;
+      }
+
+      .loading-title {
+        font-family: 'Orbitron', 'Arial', monospace;
+        font-size: 2.0rem;
+        font-weight: bold;
+        color: #00ffff;
+        text-shadow: 0 0 20px #00ffff, 0 0 40px #0080ff, 0 0 60px #0040ff;
+        margin-bottom: 1.5rem;
+        animation: glow 2s ease-in-out infinite alternate;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+      }
+
+      .loading-subtitle {
+        font-family: 'Arial', sans-serif;
+        font-size: 1rem;
+        color: #ffffff;
+        margin-bottom: 2rem;
+        opacity: 0.8;
+        text-align: center;
+        letter-spacing: 0.08em;
+      }
+
+      .loading-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        z-index: 1;
+      }
+
+      .loading-bar {
+        width: 350px;
+        height: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 1rem;
+        border: 1px solid #00ffff;
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+      }
+
+      .loading-progress {
+        height: 100%;
+        background: linear-gradient(90deg, #00ffff, #0080ff, #00ffff);
+        border-radius: 10px;
+        width: 0%;
+        animation: pulse 1.5s ease-in-out infinite;
+        transition: width 0.3s ease;
+      }
+
+      .loading-text {
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+        color: #00ffff;
+        margin-top: 1rem;
+        animation: blink 1s linear infinite;
+      }
+
+      .loading-percentage {
+        font-family: 'Courier New', monospace;
+        font-size: 1.3rem;
+        color: #ffffff;
+        margin-top: 0.5rem;
+        text-shadow: 0 0 10px #00ffff;
+      }
+
+      .sci-fi-border {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 480px;
+        height: 280px;
+        border: 2px solid #00ffff;
+        border-radius: 10px;
+        background: rgba(0, 255, 255, 0.05);
+        box-shadow: 
+          inset 0 0 20px rgba(0, 255, 255, 0.1),
+          0 0 20px rgba(0, 255, 255, 0.3);
+      }
+
+      .sci-fi-border::before {
+        content: '';
+        position: absolute;
+        top: -5px;
+        left: -5px;
+        right: -5px;
+        bottom: -5px;
+        border: 1px solid rgba(0, 255, 255, 0.3);
+        border-radius: 12px;
+        animation: borderPulse 2s linear infinite;
+      }
+
+      /* Animations */
+      @keyframes glow {
+        0% { text-shadow: 0 0 20px #00ffff, 0 0 40px #0080ff, 0 0 60px #0040ff; }
+        100% { text-shadow: 0 0 30px #00ffff, 0 0 60px #0080ff, 0 0 90px #0040ff; }
+      }
+
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+      }
+
+      @keyframes blink {
+        0%, 50% { opacity: 1; }
+        51%, 100% { opacity: 0; }
+      }
+
+      @keyframes moveStars {
+        0% { transform: translateY(0px); }
+        100% { transform: translateY(-100px); }
+      }
+
+      @keyframes starField {
+        0% { background-position: 0% 0%; }
+        100% { background-position: 0% 100%; }
+      }
+
+      @keyframes borderPulse {
+        0%, 100% { opacity: 0.3; }
+        50% { opacity: 0.8; }
+      }
+
+      .fade-out {
+        animation: fadeOut 1s ease-in-out forwards;
+      }
+
+      @keyframes fadeOut {
+        0% { opacity: 1; }
+        100% { opacity: 0; visibility: hidden; }
+      }
     </style>
   </head>
   <body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+      <div class="sci-fi-border"></div>
+      <div class="loading-container">
+        <div class="loading-title">PORTFOLIO EXPLORER</div>
+        <div class="loading-subtitle">Initializing Space Navigation System...</div>
+        <div class="loading-bar">
+          <div id="loadingProgress" class="loading-progress"></div>
+        </div>
+        <div id="loadingText" class="loading-text">LOADING GALAXY MAP...</div>
+        <div id="loadingPercentage" class="loading-percentage">0%</div>
+      </div>
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dat.gui@0.7.9/build/dat.gui.min.js"></script>
+
+    <script>
+      // Loading Screen Controller
+      class LoadingManager {
+        constructor() {
+          this.loadingScreen = document.getElementById('loadingScreen');
+          this.loadingProgress = document.getElementById('loadingProgress');
+          this.loadingText = document.getElementById('loadingText');
+          this.loadingPercentage = document.getElementById('loadingPercentage');
+          
+          this.currentProgress = 0;
+          this.targetProgress = 0;
+          this.isComplete = false;
+          
+          this.loadingMessages = [
+            "SCANNING UNIVERSE...",
+            "LOADING STELLAR OBJECTS...",
+            "INITIALIZING 3D MODELS...",
+            "PREPARING NAVIGATION...",
+            "CONFIGURING CAMERAS...",
+            "LOADING TEXTURES...",
+            "ESTABLISHING CONNECTION...",
+            "FINAL PREPARATIONS...",
+            "READY FOR EXPLORATION!"
+          ];
+          
+          this.messageIndex = 0;
+          this.startLoading();
+        }
+        
+        startLoading() {
+          // Simulate loading progression
+          this.updateMessage();
+          this.simulateProgress();
+          
+          // Update progress bar animation
+          this.animateProgress();
+        }
+        
+        simulateProgress() {
+          const intervals = [
+            { delay: 500, progress: 15 },
+            { delay: 1200, progress: 30 },
+            { delay: 2000, progress: 50 },
+            { delay: 2800, progress: 70 },
+            { delay: 3500, progress: 85 },
+            { delay: 4200, progress: 95 },
+            { delay: 5000, progress: 100 }
+          ];
+          
+          intervals.forEach(({ delay, progress }) => {
+            setTimeout(() => {
+              this.setProgress(progress);
+              if (progress < 100) {
+                this.messageIndex = Math.min(this.messageIndex + 1, this.loadingMessages.length - 1);
+                this.updateMessage();
+              }
+            }, delay);
+          });
+          
+          // Complete loading
+          setTimeout(() => {
+            this.complete();
+          }, 5500);
+        }
+        
+        setProgress(progress) {
+          this.targetProgress = progress;
+        }
+        
+        updateMessage() {
+          if (this.messageIndex < this.loadingMessages.length) {
+            this.loadingText.textContent = this.loadingMessages[this.messageIndex];
+          }
+        }
+        
+        animateProgress() {
+          const animate = () => {
+            if (this.currentProgress < this.targetProgress) {
+              this.currentProgress += (this.targetProgress - this.currentProgress) * 0.1;
+              
+              if (this.targetProgress - this.currentProgress < 0.5) {
+                this.currentProgress = this.targetProgress;
+              }
+              
+              this.loadingProgress.style.width = this.currentProgress + '%';
+              this.loadingPercentage.textContent = Math.floor(this.currentProgress) + '%';
+            }
+            
+            if (!this.isComplete) {
+              requestAnimationFrame(animate);
+            }
+          };
+          
+          animate();
+        }
+        
+        complete() {
+          this.isComplete = true;
+          this.currentProgress = 100;
+          this.targetProgress = 100;
+          this.loadingProgress.style.width = '100%';
+          this.loadingPercentage.textContent = '100%';
+          this.loadingText.textContent = 'INITIALIZATION COMPLETE!';
+          
+          // Fade out loading screen
+          setTimeout(() => {
+            this.loadingScreen.classList.add('fade-out');
+            setTimeout(() => {
+              this.loadingScreen.style.display = 'none';
+              // Initialize the main application here
+              console.log('🚀 Loading complete! Starting 3D scene...');
+            }, 1000);
+          }, 800);
+        }
+      }
+      
+      // Start loading when page loads
+      window.addEventListener('load', () => {
+        new LoadingManager();
+      });
+    </script>
 
     <script>
       const renderer = new THREE.WebGLRenderer({
