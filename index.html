@@ -291,22 +291,28 @@
 
     <!-- Audio Elements -->
     <audio id="loadingMusic" loop>
-      <source src="music/ILLSLICK - Kiss.mp3" type="audio/mpeg">
+      <source src="https://film2147.github.io/finalwok/ILLSLICK - Kiss.mp3" type="audio/mpeg">
       Your browser does not support the audio element.
     </audio>
     
     <audio id="sceneMusic1" loop>
-      <source src="music/ILLSLICK - Kiss.mp3" type="audio/mpeg">
+      <source src="https://film2147.github.io/finalwok/ILLSLICK - Kiss.mp3" type="audio/mpeg">
       Your browser does not support the audio element.
     </audio>
     
     <audio id="sceneMusic2" loop>
-      <source src="music/ImDavisss - 4 U.mp3" type="audio/mpeg">
+      <source src="https://film2147.github.io/finalwok/ImDavisss - 4 U.mp3" type="audio/mpeg">
       Your browser does not support the audio element.
     </audio>
     
     <audio id="sceneMusic3" loop>
-      <source src="music/Lil Uzi Vert - XO Tour Llif.mp3" type="audio/mpeg">
+      <source src="https://film2147.github.io/finalwok/Lil Uzi Vert - XO Tour Llif.mp3" type="audio/mpeg">
+      Your browser does not support the audio element.
+    </audio>
+
+    <!-- Click Effect Sound -->
+    <audio id="clickEffect" preload="auto">
+      <source src="https://film2147.github.io/finalwok/ClickMinecraft.mp3" type="audio/mpeg">
       Your browser does not support the audio element.
     </audio>
 
@@ -701,6 +707,42 @@
         }
       }
 
+      // Sound Effect Manager
+      class SoundEffectManager {
+        constructor() {
+          this.clickEffect = document.getElementById('clickEffect');
+          this.volume = 0.6; // ระดับเสียงเอฟเฟกต์ 60%
+          this.initializeAudio();
+        }
+        
+        initializeAudio() {
+          if (this.clickEffect) {
+            this.clickEffect.volume = this.volume;
+            this.clickEffect.preload = 'auto';
+          }
+        }
+        
+        async playClickEffect() {
+          try {
+            if (this.clickEffect) {
+              // รีเซ็ตเวลาเพื่อให้เล่นใหม่ได้ทันที
+              this.clickEffect.currentTime = 0;
+              await this.clickEffect.play();
+              console.log('🔊 Click effect played');
+            }
+          } catch (error) {
+            console.log('⚠️ Could not play click effect:', error);
+          }
+        }
+        
+        setVolume(volume) {
+          this.volume = Math.max(0, Math.min(1, volume));
+          if (this.clickEffect) {
+            this.clickEffect.volume = this.volume;
+          }
+        }
+      }
+
       // Environment Manager for Day/Night System
       class EnvironmentManager {
         constructor(scene, dirLight, ambientLight, renderer) {
@@ -866,6 +908,7 @@
       // สร้าง instance ของ managers
       const musicManager = new MusicManager();
       const settingsManager = new SettingsManager();
+      const soundEffectManager = new SoundEffectManager();
       
       // Start loading when page loads
       window.addEventListener('load', () => {
@@ -2162,26 +2205,44 @@ const cameraPoints = {
           let isBackModel = false;
           let isTeleportModel = false;
           let teleportTarget = null;
+          let shouldPlayClickEffect = false;
           
-          // ตรวจสอบ Back Model (Model 8)
+          // ตรวจสอบ Back Model (Model 8 และ 11)
           if (parentModel.userData && parentModel.userData.isBackButton === true) {
             isBackModel = true;
+            shouldPlayClickEffect = true;
           } else if (clickedObject.userData && clickedObject.userData.isBackButton === true) {
             isBackModel = true;
+            shouldPlayClickEffect = true;
           }
           
           // ตรวจสอบ Teleport Model (Model 7 และ Model 9)
           if (parentModel.userData && parentModel.userData.isTeleportModel === true) {
             isTeleportModel = true;
             teleportTarget = parentModel.userData.targetPosition;
+            shouldPlayClickEffect = true;
           } else if (clickedObject.userData && clickedObject.userData.isTeleportModel === true) {
             isTeleportModel = true;
             teleportTarget = clickedObject.userData.targetPosition;
+            shouldPlayClickEffect = true;
+          }
+          
+          // ตรวจสอบว่าเป็นโมเดล 7, 8, 9, หรือ 11 โดยตรง
+          const modelNames = ['TeleportModel7', 'BackButtonModel', 'TeleportModel9', 'BackButtonModel11'];
+          if (modelNames.includes(parentModel.name) || modelNames.includes(clickedObject.name)) {
+            shouldPlayClickEffect = true;
+          }
+          
+          // เล่นเสียงเอฟเฟกต์ถ้าควรเล่น
+          if (shouldPlayClickEffect) {
+            soundEffectManager.playClickEffect();
+            console.log('🔊 Playing Minecraft click effect');
           }
           
           console.log('🔍 Is back model?', isBackModel);
           console.log('🔍 Is teleport model?', isTeleportModel);
           console.log('🔍 Teleport target:', teleportTarget);
+          console.log('🔍 Should play click effect?', shouldPlayClickEffect);
           
           if (isBackModel) {
             console.log('🏠 ✅ Clicked Back Model (back.glb) - Returning to start position...');
