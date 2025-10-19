@@ -214,6 +214,64 @@
         0% { opacity: 1; }
         100% { opacity: 0; visibility: hidden; }
       }
+
+      /* Audio Controls Styles */
+      #settingsPanel button {
+        font-family: 'Courier New', monospace;
+        transition: all 0.3s ease;
+        box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+      }
+
+      #settingsPanel button:hover {
+        box-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
+        transform: translateY(-2px);
+      }
+
+      #settingsPanel button:active {
+        transform: translateY(0px);
+      }
+
+      /* Environment Buttons */
+      .env-btn:hover {
+        background: rgba(255,255,255,0.2) !important;
+        transform: translateY(-2px);
+      }
+
+      /* Track Buttons */
+      .track-btn:hover {
+        background: rgba(0, 255, 255, 0.2) !important;
+        transform: translateY(-1px);
+      }
+
+      .active-track {
+        box-shadow: 0 0 15px rgba(255, 0, 150, 0.8) !important;
+        animation: pulse-track 2s ease-in-out infinite;
+      }
+
+      @keyframes pulse-track {
+        0%, 100% { 
+          box-shadow: 0 0 15px rgba(255, 0, 150, 0.8);
+        }
+        50% { 
+          box-shadow: 0 0 25px rgba(255, 0, 150, 1);
+        }
+      }
+
+      /* Settings Panel Animation */
+      #settingsMenu {
+        animation: slideIn 0.3s ease-out;
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateX(100%);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
     </style>
   </head>
   <body>
@@ -228,6 +286,87 @@
         </div>
         <div id="loadingText" class="loading-text">LOADING GALAXY MAP...</div>
         <div id="loadingPercentage" class="loading-percentage">0%</div>
+      </div>
+    </div>
+
+    <!-- Audio Elements -->
+    <audio id="loadingMusic" loop>
+      <source src="music/ILLSLICK - Kiss.mp3" type="audio/mpeg">
+      Your browser does not support the audio element.
+    </audio>
+    
+    <audio id="sceneMusic1" loop>
+      <source src="music/ILLSLICK - Kiss.mp3" type="audio/mpeg">
+      Your browser does not support the audio element.
+    </audio>
+    
+    <audio id="sceneMusic2" loop>
+      <source src="music/ImDavisss - 4 U.mp3" type="audio/mpeg">
+      Your browser does not support the audio element.
+    </audio>
+    
+    <audio id="sceneMusic3" loop>
+      <source src="music/Lil Uzi Vert - XO Tour Llif.mp3" type="audio/mpeg">
+      Your browser does not support the audio element.
+    </audio>
+
+    <!-- Settings GUI Panel -->
+    <div id="settingsPanel" style="position: fixed; top: 10px; right: 10px; z-index: 1000; display: none;">
+      <!-- Settings Toggle Button -->
+      <button id="settingsToggle" style="background: rgba(0,0,0,0.9); color: #00ffff; border: 2px solid #00ffff; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-family: 'Courier New', monospace; font-weight: bold; box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);">
+        ⚙️ SETTINGS
+      </button>
+      
+      <!-- Settings Menu -->
+      <div id="settingsMenu" style="position: absolute; top: 50px; right: 0; width: 300px; background: rgba(0,0,0,0.95); border: 2px solid #00ffff; border-radius: 10px; padding: 20px; display: none; box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);">
+        
+        <!-- Day/Night Toggle -->
+        <div style="margin-bottom: 20px;">
+          <h3 style="color: #00ffff; margin: 0 0 10px 0; font-family: 'Courier New', monospace; text-shadow: 0 0 10px #00ffff;">🌍 ENVIRONMENT</h3>
+          <div style="display: flex; gap: 10px;">
+            <button id="dayMode" class="env-btn" style="flex: 1; padding: 8px; background: rgba(255,200,0,0.2); color: #ffcc00; border: 1px solid #ffcc00; border-radius: 5px; cursor: pointer; font-family: 'Courier New', monospace;">
+              ☀️ DAY
+            </button>
+            <button id="nightMode" class="env-btn" style="flex: 1; padding: 8px; background: rgba(0,50,100,0.3); color: #4488ff; border: 1px solid #4488ff; border-radius: 5px; cursor: pointer; font-family: 'Courier New', monospace;">
+              🌙 NIGHT
+            </button>
+          </div>
+        </div>
+        
+        <!-- Music Selection -->
+        <div style="margin-bottom: 20px;">
+          <h3 style="color: #00ffff; margin: 0 0 10px 0; font-family: 'Courier New', monospace; text-shadow: 0 0 10px #00ffff;">🎵 MUSIC PLAYER</h3>
+          
+          <!-- Music Control Buttons -->
+          <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+            <button id="musicToggle" style="flex: 2; padding: 8px; background: rgba(0,100,0,0.8); color: white; border: 1px solid #00ff00; border-radius: 5px; cursor: pointer; font-family: 'Courier New', monospace;">🎵 PLAYING</button>
+            <button id="volumeDown" style="padding: 8px 12px; background: rgba(0,0,0,0.8); color: white; border: 1px solid #00ffff; border-radius: 5px; cursor: pointer;">🔉</button>
+            <button id="volumeUp" style="padding: 8px 12px; background: rgba(0,0,0,0.8); color: white; border: 1px solid #00ffff; border-radius: 5px; cursor: pointer;">🔊</button>
+          </div>
+          
+          <!-- Music Track Selection -->
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <button id="track1" class="track-btn active-track" data-track="1" style="padding: 10px; background: rgba(255,0,150,0.3); color: #ff0096; border: 2px solid #ff0096; border-radius: 5px; cursor: pointer; font-family: 'Courier New', monospace; text-align: left;">
+              🎼 ILLSLICK - Kiss
+            </button>
+            <button id="track2" class="track-btn" data-track="2" style="padding: 10px; background: rgba(0,0,0,0.6); color: #00ffff; border: 1px solid #00ffff; border-radius: 5px; cursor: pointer; font-family: 'Courier New', monospace; text-align: left;">
+              🎼 ImDavisss - 4 U
+            </button>
+            <button id="track3" class="track-btn" data-track="3" style="padding: 10px; background: rgba(0,0,0,0.6); color: #00ffff; border: 1px solid #00ffff; border-radius: 5px; cursor: pointer; font-family: 'Courier New', monospace; text-align: left;">
+              🎼 Lil Uzi Vert - XO Tour Llif
+            </button>
+          </div>
+          
+          <!-- Volume Display -->
+          <div style="margin-top: 10px; color: #00ffff; font-family: 'Courier New', monospace; font-size: 12px; text-align: center;">
+            Volume: <span id="volumeDisplay">50%</span>
+          </div>
+        </div>
+        
+        <!-- Close Button -->
+        <button id="closeSettings" style="width: 100%; padding: 10px; background: rgba(100,0,0,0.8); color: white; border: 1px solid #ff4444; border-radius: 5px; cursor: pointer; font-family: 'Courier New', monospace;">
+          ❌ CLOSE
+        </button>
       </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
@@ -347,14 +486,392 @@
               this.loadingScreen.style.display = 'none';
               // Initialize the main application here
               console.log('🚀 Loading complete! Starting 3D scene...');
+              // Stop loading music and start scene music
+              musicManager.switchToSceneMusic();
+              // Show settings panel
+              document.getElementById('settingsPanel').style.display = 'block';
+              // Initialize Environment Manager
+              environmentManager = new EnvironmentManager(scene, dirLight, ambientLight, renderer);
             }, 1000);
           }, 800);
         }
       }
+
+      // Music Manager
+      class MusicManager {
+        constructor() {
+          this.loadingMusic = document.getElementById('loadingMusic');
+          this.sceneMusicTracks = [
+            document.getElementById('sceneMusic1'),
+            document.getElementById('sceneMusic2'),
+            document.getElementById('sceneMusic3')
+          ];
+          this.currentMusic = null;
+          this.currentTrack = 1; // Default to first track
+          this.isMuted = false;
+          this.volume = 0.5; // ระดับเสียงเริ่มต้น 50%
+          
+          this.trackNames = [
+            "ILLSLICK - Kiss",
+            "ImDavisss - 4 U", 
+            "Lil Uzi Vert - XO Tour Llif"
+          ];
+          
+          this.setupEventListeners();
+          this.initializeAudio();
+        }
+        
+        initializeAudio() {
+          // ตั้งค่าระดับเสียงเริ่มต้น
+          this.loadingMusic.volume = this.volume;
+          this.sceneMusicTracks.forEach(track => {
+            track.volume = this.volume;
+            track.preload = 'auto';
+          });
+          
+          // ตั้งค่า preload
+          this.loadingMusic.preload = 'auto';
+        }
+        
+        setupEventListeners() {
+          const musicToggle = document.getElementById('musicToggle');
+          const volumeDown = document.getElementById('volumeDown');
+          const volumeUp = document.getElementById('volumeUp');
+          const trackButtons = document.querySelectorAll('.track-btn');
+          
+          musicToggle.addEventListener('click', () => {
+            this.toggleMusic();
+          });
+          
+          volumeDown.addEventListener('click', () => {
+            this.adjustVolume(-0.1);
+          });
+          
+          volumeUp.addEventListener('click', () => {
+            this.adjustVolume(0.1);
+          });
+          
+          // Track selection
+          trackButtons.forEach((btn, index) => {
+            btn.addEventListener('click', () => {
+              this.changeTrack(index + 1);
+            });
+          });
+        }
+        
+        async startLoadingMusic() {
+          try {
+            // รอให้ผู้ใช้มีการโต้ตอบก่อนเล่นเพลง (เพื่อให้เป็นไปตาม browser policy)
+            await this.waitForUserInteraction();
+            
+            this.currentMusic = this.loadingMusic;
+            await this.loadingMusic.play();
+            console.log('🎵 Loading music started');
+          } catch (error) {
+            console.log('⚠️ Could not play loading music:', error);
+          }
+        }
+        
+        async switchToSceneMusic() {
+          try {
+            // หยุดเพลงโหลด
+            if (this.loadingMusic && !this.loadingMusic.paused) {
+              this.loadingMusic.pause();
+              this.loadingMusic.currentTime = 0;
+            }
+            
+            // เริ่มเพลงฉากตาม track ที่เลือก
+            if (!this.isMuted) {
+              this.currentMusic = this.sceneMusicTracks[this.currentTrack - 1];
+              await this.currentMusic.play();
+              console.log(`🎵 Scene music started: Track ${this.currentTrack}`);
+            }
+          } catch (error) {
+            console.log('⚠️ Could not play scene music:', error);
+          }
+        }
+        
+        async changeTrack(trackNumber) {
+          if (trackNumber < 1 || trackNumber > 3) return;
+          
+          // หยุดเพลงปัจจุบัน
+          if (this.currentMusic && !this.currentMusic.paused) {
+            this.currentMusic.pause();
+            this.currentMusic.currentTime = 0;
+          }
+          
+          // เปลี่ยน track
+          this.currentTrack = trackNumber;
+          
+          // อัปเดต UI
+          this.updateTrackSelection();
+          
+          // เล่นเพลงใหม่ถ้าไม่ mute
+          if (!this.isMuted) {
+            try {
+              this.currentMusic = this.sceneMusicTracks[this.currentTrack - 1];
+              await this.currentMusic.play();
+              console.log(`🎵 Changed to Track ${trackNumber}: ${this.trackNames[trackNumber - 1]}`);
+            } catch (error) {
+              console.log('⚠️ Could not play new track:', error);
+            }
+          }
+        }
+        
+        updateTrackSelection() {
+          const trackButtons = document.querySelectorAll('.track-btn');
+          trackButtons.forEach((btn, index) => {
+            if (index + 1 === this.currentTrack) {
+              btn.classList.add('active-track');
+              btn.style.background = 'rgba(255,0,150,0.3)';
+              btn.style.color = '#ff0096';
+              btn.style.border = '2px solid #ff0096';
+            } else {
+              btn.classList.remove('active-track');
+              btn.style.background = 'rgba(0,0,0,0.6)';
+              btn.style.color = '#00ffff';
+              btn.style.border = '1px solid #00ffff';
+            }
+          });
+        }
+        
+        toggleMusic() {
+          const musicToggle = document.getElementById('musicToggle');
+          
+          if (this.isMuted) {
+            // เปิดเสียง
+            this.isMuted = false;
+            if (this.currentMusic) {
+              this.currentMusic.play().catch(e => console.log('Cannot play:', e));
+            }
+            musicToggle.textContent = '🎵 PLAYING';
+            musicToggle.style.backgroundColor = 'rgba(0,100,0,0.8)';
+            musicToggle.style.borderColor = '#00ff00';
+          } else {
+            // ปิดเสียง
+            this.isMuted = true;
+            if (this.currentMusic) {
+              this.currentMusic.pause();
+            }
+            musicToggle.textContent = '🔇 MUTED';
+            musicToggle.style.backgroundColor = 'rgba(100,0,0,0.8)';
+            musicToggle.style.borderColor = '#ff4444';
+          }
+        }
+        
+        adjustVolume(change) {
+          this.volume = Math.max(0, Math.min(1, this.volume + change));
+          
+          // อัปเดตระดับเสียงของทุกแทร็ก
+          if (this.loadingMusic) this.loadingMusic.volume = this.volume;
+          this.sceneMusicTracks.forEach(track => {
+            track.volume = this.volume;
+          });
+          
+          // อัปเดต UI
+          const volumeDisplay = document.getElementById('volumeDisplay');
+          if (volumeDisplay) {
+            volumeDisplay.textContent = Math.round(this.volume * 100) + '%';
+          }
+          
+          console.log('🔊 Volume adjusted to:', Math.round(this.volume * 100) + '%');
+          
+          // Update button styles based on volume
+          const volumeDown = document.getElementById('volumeDown');
+          const volumeUp = document.getElementById('volumeUp');
+          
+          if (volumeDown) volumeDown.style.opacity = this.volume > 0 ? '1' : '0.5';
+          if (volumeUp) volumeUp.style.opacity = this.volume < 1 ? '1' : '0.5';
+        }
+        
+        async waitForUserInteraction() {
+          return new Promise((resolve) => {
+            const handleInteraction = () => {
+              document.removeEventListener('click', handleInteraction);
+              document.removeEventListener('keydown', handleInteraction);
+              resolve();
+            };
+            
+            document.addEventListener('click', handleInteraction);
+            document.addEventListener('keydown', handleInteraction);
+            
+            // Auto resolve after 3 seconds if no interaction
+            setTimeout(resolve, 3000);
+          });
+        }
+      }
+
+      // Environment Manager for Day/Night System
+      class EnvironmentManager {
+        constructor(scene, dirLight, ambientLight, renderer) {
+          this.scene = scene;
+          this.dirLight = dirLight;
+          this.ambientLight = ambientLight;
+          this.renderer = renderer;
+          this.isDay = true;
+          
+          // Store original settings
+          this.daySettings = {
+            dirLightColor: 0xffffff,
+            dirLightIntensity: 1.5,
+            ambientIntensity: 1.0,
+            backgroundColor: 0x000011,
+            fogColor: 0x000011
+          };
+          
+          this.nightSettings = {
+            dirLightColor: 0x4488ff,
+            dirLightIntensity: 0.3,
+            ambientIntensity: 0.2,
+            backgroundColor: 0x000005,
+            fogColor: 0x000008
+          };
+          
+          this.setupEventListeners();
+        }
+        
+        setupEventListeners() {
+          const dayButton = document.getElementById('dayMode');
+          const nightButton = document.getElementById('nightMode');
+          
+          dayButton.addEventListener('click', () => {
+            this.setDayMode();
+          });
+          
+          nightButton.addEventListener('click', () => {
+            this.setNightMode();
+          });
+        }
+        
+        setDayMode() {
+          if (this.isDay) return;
+          
+          this.isDay = true;
+          
+          // Update lighting
+          this.dirLight.color.setHex(this.daySettings.dirLightColor);
+          this.dirLight.intensity = this.daySettings.dirLightIntensity;
+          this.ambientLight.intensity = this.daySettings.ambientIntensity;
+          
+          // Update renderer
+          this.renderer.setClearColor(this.daySettings.backgroundColor, 0);
+          
+          // Update button states
+          this.updateButtonStates();
+          
+          console.log('☀️ Switched to Day Mode');
+        }
+        
+        setNightMode() {
+          if (!this.isDay) return;
+          
+          this.isDay = false;
+          
+          // Update lighting
+          this.dirLight.color.setHex(this.nightSettings.dirLightColor);
+          this.dirLight.intensity = this.nightSettings.dirLightIntensity;
+          this.ambientLight.intensity = this.nightSettings.ambientIntensity;
+          
+          // Update renderer
+          this.renderer.setClearColor(this.nightSettings.backgroundColor, 0);
+          
+          // Update button states
+          this.updateButtonStates();
+          
+          console.log('🌙 Switched to Night Mode');
+        }
+        
+        updateButtonStates() {
+          const dayButton = document.getElementById('dayMode');
+          const nightButton = document.getElementById('nightMode');
+          
+          if (this.isDay) {
+            // Day mode active
+            dayButton.style.background = 'rgba(255,200,0,0.6)';
+            dayButton.style.color = '#ffcc00';
+            dayButton.style.border = '2px solid #ffcc00';
+            dayButton.style.boxShadow = '0 0 15px rgba(255, 204, 0, 0.8)';
+            
+            // Night mode inactive
+            nightButton.style.background = 'rgba(0,50,100,0.2)';
+            nightButton.style.color = '#4488ff';
+            nightButton.style.border = '1px solid #4488ff';
+            nightButton.style.boxShadow = '0 0 5px rgba(68, 136, 255, 0.3)';
+          } else {
+            // Night mode active
+            nightButton.style.background = 'rgba(0,50,100,0.6)';
+            nightButton.style.color = '#4488ff';
+            nightButton.style.border = '2px solid #4488ff';
+            nightButton.style.boxShadow = '0 0 15px rgba(68, 136, 255, 0.8)';
+            
+            // Day mode inactive
+            dayButton.style.background = 'rgba(255,200,0,0.2)';
+            dayButton.style.color = '#ffcc00';
+            dayButton.style.border = '1px solid #ffcc00';
+            dayButton.style.boxShadow = '0 0 5px rgba(255, 204, 0, 0.3)';
+          }
+        }
+      }
+
+      // Settings Panel Manager
+      class SettingsManager {
+        constructor() {
+          this.isOpen = false;
+          this.setupEventListeners();
+        }
+        
+        setupEventListeners() {
+          const settingsToggle = document.getElementById('settingsToggle');
+          const closeSettings = document.getElementById('closeSettings');
+          const settingsMenu = document.getElementById('settingsMenu');
+          
+          settingsToggle.addEventListener('click', () => {
+            this.toggleSettings();
+          });
+          
+          closeSettings.addEventListener('click', () => {
+            this.closeSettings();
+          });
+          
+          // Close settings when clicking outside
+          document.addEventListener('click', (event) => {
+            const settingsPanel = document.getElementById('settingsPanel');
+            if (!settingsPanel.contains(event.target) && this.isOpen) {
+              this.closeSettings();
+            }
+          });
+        }
+        
+        toggleSettings() {
+          if (this.isOpen) {
+            this.closeSettings();
+          } else {
+            this.openSettings();
+          }
+        }
+        
+        openSettings() {
+          const settingsMenu = document.getElementById('settingsMenu');
+          settingsMenu.style.display = 'block';
+          this.isOpen = true;
+        }
+        
+        closeSettings() {
+          const settingsMenu = document.getElementById('settingsMenu');
+          settingsMenu.style.display = 'none';
+          this.isOpen = false;
+        }
+      }
+
+      // สร้าง instance ของ managers
+      const musicManager = new MusicManager();
+      const settingsManager = new SettingsManager();
       
       // Start loading when page loads
       window.addEventListener('load', () => {
         new LoadingManager();
+        // เริ่มเพลงโหลดหลังจากผู้ใช้มีการโต้ตอบ
+        musicManager.startLoadingMusic();
       });
     </script>
 
@@ -484,6 +1001,10 @@ const cameraPoints = {
       instructions.innerHTML = `
         <strong>🎮 Controls:</strong><br>
         <span style="color: #ffff00;">Q</span>: Enter/Exit FPS mode<br>
+        <br><strong>⚙️ Settings Panel:</strong><br>
+        <span style="color: #00ffff;">Settings Button</span>: Open/Close settings<br>
+        <span style="color: #ffcc00;">☀️ DAY / 🌙 NIGHT</span>: Switch environment<br>
+        <span style="color: #ff69b4;">🎵 Music Controls</span>: Play/Pause, Volume, Track selection<br>
         <br><strong>🖱️ In Normal Mode:</strong><br>
         <span style="color: #00ff00;">Mouse hover</span>: Hover over back models to see color change<br>
         <br><strong>🎯 In FPS Mode:</strong><br>
@@ -517,11 +1038,15 @@ const cameraPoints = {
       document.body.appendChild(info);
 
       // Light - ลดความเข้มแสงเพื่อให้พื้นหลังอวกาศดูเข้มขึ้น
-      scene.add(new THREE.AmbientLight(0x404040, 1.0)); // ลดจาก 2.0 เป็น 0.3 และเปลี่ยนเป็นสีเทา
+      const ambientLight = new THREE.AmbientLight(0x404040, 1.0); // ลดจาก 2.0 เป็น 0.3 และเปลี่ยนเป็นสีเทา
+      scene.add(ambientLight);
       const dirLight = new THREE.DirectionalLight(0xffffff, 1.5); // ลดจาก 2.0 เป็น 0.8
       dirLight.position.set(-2.7, 29.2, 80.5);
       dirLight.castShadow = true;
       scene.add(dirLight);
+
+      // Create Environment Manager
+      let environmentManager;
 
       // Add ground plane with texture
       const groundTexture = new THREE.TextureLoader().load(
@@ -549,10 +1074,7 @@ const cameraPoints = {
       const gui = new dat.GUI();
       const lightFolder = gui.addFolder("Light");
 
-      // เพิ่มการควบคุม ambient light
-      const ambientLight = scene.children.find(
-        (child) => child.type === "AmbientLight"
-      );
+      // เพิ่มการควบคุม ambient light (ใช้ reference ที่มีอยู่แล้ว)
       lightFolder
         .add(ambientLight, "intensity", 0, 1, 0.1)
         .name("Ambient Intensity");
