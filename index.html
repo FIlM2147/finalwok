@@ -2027,16 +2027,32 @@
 
             child.castShadow = true;
             child.receiveShadow = true;
-            if (child.material && child.material.map) {
-              child.material.map.encoding = THREE.sRGBEncoding;
-              child.material.needsUpdate = true;
-            }
 
-            // ✅ Initialize emissive properties สำหรับ animation effects
+            // 🎨 Apply Cel Shading สำหรับ Model 15 (Zero Two)
             if (child.material) {
+              // เก็บค่าเดิมไว้ก่อน
+              const originalMap = child.material.map;
+              const originalColor = child.material.color ? child.material.color.clone() : new THREE.Color(1, 1, 1);
+
+              // สร้าง Toon Material ใหม่
+              child.material = new THREE.MeshToonMaterial({
+                map: originalMap,
+                color: originalColor,
+                transparent: false,
+                side: THREE.FrontSide
+              });
+
+              // ตั้งค่า texture encoding ถ้ามี
+              if (originalMap) {
+                child.material.map.encoding = THREE.sRGBEncoding;
+              }
+
+              // ✅ Initialize emissive properties
               if (!child.material.emissive) child.material.emissive = new THREE.Color(0x000000);
               if (typeof child.material.emissiveIntensity !== 'number') child.material.emissiveIntensity = 0.0;
               child.material.needsUpdate = true;
+
+              console.log("🎨 Applied Cel Shading to Model15:", child.name);
             }
           }
         });
@@ -2053,7 +2069,29 @@
         };
         model15.name = 'Model15';
 
+        // 🖤 สร้าง Outline แยกสำหรับ Model 15
+        const outline15 = model15.clone();
+        outline15.traverse((child) => {
+          if (child.isMesh && child.material) {
+            // เปลี่ยนเป็น material สีดำสำหรับขอบ
+            child.material = new THREE.MeshBasicMaterial({
+              color: 0x000000,
+              side: THREE.BackSide,
+              transparent: true,
+              opacity: 0.35
+            });
+          }
+        });
+        
+        // ตั้งค่า outline
+        outline15.position.copy(model15.position);
+        outline15.rotation.copy(model15.rotation);
+        outline15.scale.copy(model15.scale).multiplyScalar(1.01); // ขยายเล็กน้อยเพื่อสร้างขอบ
+        outline15.renderOrder = -1;
+        outline15.name = 'Model15Outline';
+
         scene.add(model15);
+        scene.add(outline15); // เพิ่ม outline แยก
         clickableObjects.push(model15);
 
         console.log("GLB Model 15 loaded successfully");
