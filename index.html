@@ -361,7 +361,7 @@
 
   <!-- Click Effect Sound -->
   <audio id="clickEffect" preload="auto">
-    <source src="https://film2147.github.io/finalwok/ClickMinecraft.mp3" type="audio/mpeg">
+    <source src="https://film2147.github.io/finalwok/Effectclick.mp3" type="audio/mpeg">
     Your browser does not support the audio element.
   </audio>
 
@@ -798,7 +798,7 @@
     class SoundEffectManager {
       constructor() {
         this.clickEffect = document.getElementById('clickEffect');
-        this.volume = 0.6; // ระดับเสียงเอฟเฟกต์ 60%
+        this.volume = 0.3; // ระดับเสียงเอฟเฟกต์ 30%
 
         this.initializeAudio();
       }
@@ -1684,6 +1684,10 @@
         };
         model10.name = 'TeleportModel10';
 
+        // เก็บ reference และตำแหน่ง Y เดิมสำหรับ model10
+        window.model10 = model10;
+        baseY_model10 = model10.position.y;
+
         scene.add(model10);
         clickableObjects.push(model10);
 
@@ -2327,10 +2331,12 @@
     let isModel8Hovered = false; // สถานะการ hover โมเดล 8
     let model9 = null; // เก็บ reference ของโมเดล 9
     let isModel9Hovered = false; // สถานะการ hover โมเดล 9
+    let model10 = null; // เก็บ reference ของโมเดล 10
     let model11 = null; // เก็บ reference ของโมเดล 11
     let isModel11Hovered = false; // สถานะการ hover โมเดล 11
     let baseY_model7 = 0;
     let baseY_model9 = 0;
+    let baseY_model10 = 0;
 
     // Render loop
     function animate() {
@@ -2470,7 +2476,7 @@
       updateModel79Interaction(time);
       renderer.render(scene, camera);
     }
-    // 🛸 Hover Float + Ripple Feedback สำหรับ Model 7 และ 9
+    // 🛸 Hover Float + Ripple Feedback สำหรับ Model 7, 9 และ 10
     function updateModel79Interaction(time) {
       // ---- Model 7 ----
       if (model7) {
@@ -2501,6 +2507,13 @@
             }
           });
         }
+      }
+
+      // ---- Model 10 ----
+      if (window.model10) {
+        // เอฟเฟกต์ลอยขึ้นลงเบา ๆ ด้วยจังหวะที่แตกต่าง
+        const floatY = Math.sin(time * 1.8) * 0.3; // ลอยช้ากว่าและสูงกว่าเล็กน้อย
+        window.model10.position.y = baseY_model10 + floatY;
       }
     }
 
@@ -2567,5 +2580,4 @@
 </body>
 
 </html>
-
 
