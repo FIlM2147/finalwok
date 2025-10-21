@@ -1335,25 +1335,11 @@
 
         model6.traverse((child) => {
           if (child.isMesh) {
-            // ตรวจสอบและลบพื้นหลังที่อาจติดมา
-            if (child.material && child.material.name) {
-              const matName = child.material.name.toLowerCase();
-              if (
-                matName.includes("background") ||
-                matName.includes("sky") ||
-                matName.includes("environment") ||
-                matName.includes("skybox")
-              ) {
-                child.visible = false;
-                console.log("Hidden background mesh in model6:", child.name);
-                return;
-              }
-            }
-
-            child.castShadow = true;
-            child.receiveShadow = true;
-            if (child.material && child.material.map) {
-              child.material.map.encoding = THREE.sRGBEncoding;
+            // ทำให้โมเดล 6 เป็นสีขาวเหมือนโมเดล 7 และเรืองแสง (ไม่กระพริบ)
+            if (child.material) {
+              child.material.color.set(0xffffff); // สีขาวล้วน
+              child.material.emissive = new THREE.Color(0xffffff); // แสงขาว
+              child.material.emissiveIntensity = 1.0; // เรืองแสงคงที่
               child.material.needsUpdate = true;
             }
           }
@@ -1362,7 +1348,7 @@
         // ตำแหน่งด้านบน ลอยกลางอากาศ
         model6.position.set(29.9, 61.4, 13.8);
         model6.scale.set(2, 2, 2);
-        model6.rotation.y = Math.PI / 6; // หมุนเล็กน้อย
+        model6.rotation.y = Math.PI / 6 + Math.PI / -30; // หมุนเล็กน้อย
         model6.name = 'NameModel6'; // เพิ่มชื่อเพื่อให้หาได้ง่าย
         model6.userData = { originalRotationY: Math.PI / 6 }; // เก็บมุมเดิม
         scene.add(model6);
@@ -1501,7 +1487,7 @@
         backModelTemp.position.set(22.3, 58.2, 18.4); // ขยับไปทางซ้าย (ลด x จาก 29.9 เป็น 20)
         // ขยับไปทางซ้าย (ลด x จาก 29.9 เป็น 20)
         backModelTemp.scale.set(3, 3, 3);
-        backModelTemp.rotation.y = Math.PI / 6; // หมุนเล็กน้อย
+        backModelTemp.rotation.y = Math.PI / 6 + Math.PI / -30; // หมุนเล็กน้อย
 
         // ตั้งชื่อให้โมเดล 8 เพื่อระบุได้ง่าย
         backModelTemp.userData = { isBackButton: true, modelName: 'back_model' };
@@ -1571,7 +1557,7 @@
         // ตั้งค่า userData สำหรับโมเดล 9 - ไปยังตำแหน่งเฉพาะ
         loadedModel9.userData = {
           isTeleportModel: true,
-          targetPosition: { x: 38.1, y: 61.8, z: 42 },
+          targetPosition: { x: 38.1, y: 61.8, z: 60.8 },
           targetPitch: 3 * (Math.PI / 180), // 3 องศา (แปลงเป็น radians)
           targetYaw: 40 * (Math.PI / 180),   // 40 องศา (แปลงเป็น radians)
           modelName: 'teleport_model_9'
@@ -1638,16 +1624,6 @@
         model10.position.set(8.9, 61.8, 22.1); // ตำแหน่งใหม่ เลื่อนไปทางซ้าย
         model10.scale.set(10, 10, 10);
         model10.rotation.y = Math.PI / 6 + Math.PI / 2 + Math.PI / 6 + Math.PI / 2 + Math.PI / 6 + Math.PI / 5; // หมุนเล็กน้อย
-
-        // ตั้งค่า userData สำหรับโมเดล 10 - ไปยังตำแหน่งเฉพาะ
-        model10.userData = {
-          isTeleportModel: true,
-          targetPosition: { x: 15.5, y: 2.5, z: 20.8 },
-          targetPitch: -10 * (Math.PI / 180), // -10 องศา (มองลงเล็กน้อย)
-          targetYaw: 90 * (Math.PI / 180),     // 90 องศา (หันไปทางขวา)
-          modelName: 'teleport_model_10'
-        };
-        model10.name = 'TeleportModel10';
 
         // เก็บ reference และตำแหน่ง Y เดิมสำหรับ model10
         window.model10 = model10;
@@ -2518,6 +2494,20 @@
         const floatY = Math.sin(time * 1.8) * 0.3; // ลอยช้ากว่าและสูงกว่าเล็กน้อย
         window.model10.position.y = baseY_model10 + floatY;
       }
+
+      // ---- Model 6 ----
+      if (window.model6) {
+        window.model6.traverse((child) => {
+          if (child.isMesh && child.material) {
+            // สีขาวล้วน + เรืองแสงขาวคงที่ (ไม่กระพริบ)
+            child.material.color.set(0xffffff);
+            if (child.material.emissive) {
+              child.material.emissive.setHex(0xffffff);
+              child.material.emissiveIntensity = 1.0;
+            }
+          }
+        });
+      }
     }
 
     function updateHoverStates() {
@@ -2584,4 +2574,3 @@
 </body>
 
 </html>
-
